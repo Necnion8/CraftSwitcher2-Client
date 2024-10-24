@@ -26,6 +26,7 @@ export function ServerFileEditView() {
   const [blob, setBlob] = useState<Blob>();
   const [content, setContent] = useState('');
   const [isChanged, setIsChanged] = useState(false);
+  const [isReadonly, setIsReadonly] = useState(false);
 
   const handleChange = (value: string | undefined) => {
     setIsChanged(true);
@@ -34,12 +35,13 @@ export function ServerFileEditView() {
 
   const handleSave = useCallback(async () => {
     if (!file) return;
+    if (isReadonly) return;
 
     const _blob = new Blob([content], { type: blob!.type });
 
     await file.saveData(_blob);
     setIsChanged(false);
-  }, [blob, content, file]);
+  }, [blob, content, file, isReadonly]);
 
   const handleCtrlS = useCallback(
     async (e: KeyboardEvent) => {
@@ -68,7 +70,14 @@ export function ServerFileEditView() {
       const data = await _file.getData();
       setBlob(data);
 
-      setContent(await data.text());
+      if (_file.name.endsWith(".log.gz")) {
+        // using Compression Streams API
+        const decompData = new Response(data.stream().pipeThrough(new DecompressionStream("gzip")));
+        setIsReadonly(true);
+        setContent(await decompData.text());
+      } else {
+        setContent(await data.text());
+      }
     })();
   }, [id, params]);
 
@@ -145,6 +154,9 @@ export function ServerFileEditView() {
           language={file?.type.name}
           value={content}
           onChange={handleChange}
+          options={{
+            readOnly: isReadonly
+          }}
         />
       </Card>
     </DashboardContent>

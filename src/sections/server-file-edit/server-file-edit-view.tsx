@@ -72,9 +72,13 @@ export function ServerFileEditView() {
 
       if (_file.name.endsWith(".log.gz")) {
         // using Compression Streams API
-        const decompData = new Response(data.stream().pipeThrough(new DecompressionStream("gzip")));
         setIsReadonly(true);
-        setContent(await decompData.text());
+        try {
+          const decompData = new Response(data.stream().pipeThrough(new DecompressionStream("gzip")));
+          setContent(await decompData.text());
+        } catch (e) {
+          console.error(e);
+        }
       } else {
         setContent(await data.text());
       }

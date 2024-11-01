@@ -322,6 +322,7 @@ export default function ServerFiles({ server, ws }: Props) {
           handleDownload={handleDownload}
           handleCompress={handleCompress}
           handleExtract={handleExtract}
+          handlMkdirDialogOpen={handlMkdirDialogOpen}
         />
         <Scrollbar>
           <TableContainer

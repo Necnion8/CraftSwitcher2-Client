@@ -15,6 +15,8 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import InputAdornment from '@mui/material/InputAdornment';
 import { useTheme, type Breakpoint } from '@mui/material/styles';
 
+import { useRouter } from 'src/routes/hooks';
+
 import FileType from 'src/abc/file-type';
 import { ServerFile } from 'src/api/file-manager';
 
@@ -38,6 +40,7 @@ type Props = {
   handleDownload: () => void;
   handleCompress: () => void;
   handleExtract: () => void;
+  handlMkdirDialogOpen: () => void;
 };
 
 export default function ServerFileToolbar({
@@ -56,6 +59,7 @@ export default function ServerFileToolbar({
   handleDownload,
   handleCompress,
   handleExtract,
+  handlMkdirDialogOpen,
 }: Props) {
   const theme = useTheme();
   const layoutQuery: Breakpoint = 'lg';
@@ -63,6 +67,12 @@ export default function ServerFileToolbar({
   const path = directory?.src || '';
   const location = directory?.path || '';
   const pathSegments = path.split('/');
+
+  const router = useRouter();
+
+  const handleEdit = () => {
+    router.push(`edit?path=${selected[0].src}`);
+  };
 
   return (
     <Toolbar
@@ -134,31 +144,48 @@ export default function ServerFileToolbar({
         sx={{ [theme.breakpoints.down(layoutQuery)]: { width: '100%' } }}
       >
         <Box display="flex" gap={0.5} height="fit-content">
-          {selected.length === 1 && selected[0].type.equal(FileType.ARCHIVE) && (
-            <Tooltip title="展開">
-              <IconButton color="primary" onClick={handleExtract}>
-                <Iconify icon="fluent:folder-arrow-right-16-regular" />
-              </IconButton>
-            </Tooltip>
+          {selected.length === 1 && (
+            <>
+              <Tooltip title="圧縮">
+                <IconButton color="primary" onClick={handleCompress}>
+                  <Iconify icon="fluent:archive-16-regular" />
+                </IconButton>
+              </Tooltip>
+              {selected[0].type.equal(FileType.ARCHIVE) && (
+                <Tooltip title="展開">
+                  <IconButton color="primary" onClick={handleExtract}>
+                    <Iconify icon="fluent:folder-arrow-right-16-regular" />
+                  </IconButton>
+                </Tooltip>
+              )}
+              {selected[0].type.equal(FileType.DIRECTORY) && (
+                <Tooltip title="開く">
+                  <IconButton color="primary" onClick={() => handleChangePath(selected[0].src)}>
+                    <Iconify icon="fluent:folder-open-16-regular" />
+                  </IconButton>
+                </Tooltip>
+              )}
+              {selected[0].type.isEditable && (
+                <Tooltip title="編集">
+                  <IconButton color="primary" onClick={handleEdit}>
+                    <Iconify icon="fluent:edit-16-regular" />
+                  </IconButton>
+                </Tooltip>
+              )}
+              {selected[0] instanceof ServerFile && (
+                <Tooltip title="ダウンロード">
+                  <IconButton color="primary" onClick={handleDownload}>
+                    <Iconify icon="fluent:arrow-download-16-regular" />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </>
           )}
-          {selected.length === 1 && selected[0].type.equal(FileType.DIRECTORY) && (
-            <Tooltip title="開く">
-              <IconButton color="primary" onClick={() => handleChangePath(selected[0].src)}>
-                <Iconify icon="fluent:folder-open-16-regular" />
-              </IconButton>
-            </Tooltip>
-          )}
-          {selected.length === 1 && selected[0].type.isEditable && (
-            <Tooltip title="編集">
-              <IconButton color="primary">
-                <Iconify icon="fluent:edit-16-regular" />
-              </IconButton>
-            </Tooltip>
-          )}
-          {selected.length === 1 && selected[0] instanceof ServerFile && (
-            <Tooltip title="ダウンロード">
-              <IconButton color="primary" onClick={handleDownload}>
-                <Iconify icon="fluent:arrow-download-16-regular" />
+
+          {selected.length === 0 && (
+            <Tooltip title="新規フォルダ">
+              <IconButton color="primary" onClick={handlMkdirDialogOpen}>
+                <Iconify icon="fluent:folder-add-16-regular" />
               </IconButton>
             </Tooltip>
           )}

@@ -72,6 +72,7 @@ export default function ServerFileContextMenu({
             [`&.${menuItemClasses.selected}`]: { backgroundColor: 'action.selected' },
           },
           outline: 'none',
+          minWidth: 160,
         }}
       >
         {selected.length > 0 ? (

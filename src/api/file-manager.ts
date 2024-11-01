@@ -242,7 +242,7 @@ export class ServerFile extends FileManager {
     createdAt: Date | undefined = undefined,
     size = -1
   ) {
-    super(name, _path, modifyAt, createdAt, size, FileType.get(path.extname(name)), serverId);
+    super(name, _path, modifyAt, createdAt, size, FileType.getByFilename(name), serverId);
   }
 
   async getData(): Promise<Blob> {

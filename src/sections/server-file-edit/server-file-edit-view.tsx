@@ -70,9 +70,9 @@ export function ServerFileEditView() {
 
       let data = await _file.getData();
       if (_file.name.endsWith(".gz")) {
-        // using Compression Streams API
         setIsReadonly(true);  /* なぜか onChange が呼ばれる */
         try {
+          // using Compression Streams API
           data = await (new Response(data.stream().pipeThrough(new DecompressionStream("gzip")))).blob();
         } catch (e) {
           console.error(e);

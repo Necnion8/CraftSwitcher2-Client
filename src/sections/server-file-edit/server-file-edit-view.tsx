@@ -29,6 +29,7 @@ export function ServerFileEditView() {
   const [isReadonly, setIsReadonly] = useState(false);
 
   const handleChange = (value: string | undefined) => {
+    if (isReadonly) return;  /* setIsReadonly(true) で changed フラグが立ってしまうので代わりにここで防ぐ */
     setIsChanged(true);
     setContent(value!);
   };
@@ -67,21 +68,19 @@ export function ServerFileEditView() {
       const _file = fileInfo as ServerFile;
       setFile(_file);
 
-      const data = await _file.getData();
-      setBlob(data);
-
-      if (_file.name.endsWith(".log.gz")) {
+      let data = await _file.getData();
+      if (_file.name.endsWith(".gz")) {
         // using Compression Streams API
-        setIsReadonly(true);
+        setIsReadonly(true);  /* なぜか onChange が呼ばれる */
         try {
-          const decompData = new Response(data.stream().pipeThrough(new DecompressionStream("gzip")));
-          setContent(await decompData.text());
+          data = await (new Response(data.stream().pipeThrough(new DecompressionStream("gzip")))).blob();
         } catch (e) {
           console.error(e);
         }
-      } else {
-        setContent(await data.text());
       }
+      setBlob(data);
+
+      setContent(await data.text());
     })();
   }, [id, params]);
 
@@ -159,7 +158,7 @@ export function ServerFileEditView() {
           value={content}
           onChange={handleChange}
           options={{
-            readOnly: isReadonly
+            readOnly: isReadonly,
           }}
         />
       </Card>

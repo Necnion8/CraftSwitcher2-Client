@@ -44,7 +44,7 @@ export default function ServerFileTableRow({
   const router = useRouter();
 
   const handleDoubleClick = async () => {
-    if (file.type.isEditable || file.name.endsWith(".log.gz")) {
+    if (file.type.isEditable) {
       router.push(`edit?path=${file.path}`);
     } else {
       const fileData = await file.getData();

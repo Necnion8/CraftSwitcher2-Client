@@ -1,6 +1,6 @@
 import type Server from 'src/api/server';
 import type ServerState from 'src/abc/server-state';
-import type WebSocketClient from 'src/api/ws-client';
+import WebSocketClient, { ServerProcessReadEvent } from 'src/api/ws-client';
 
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
@@ -27,7 +27,7 @@ export default function ServerConsole({
 
   const handleSendLine = useCallback(
     (data: string) => {
-      if (server.state.isRunning) return;
+      if (!server.state.isRunning) return;
       ws.sendLine(server.id, data);
     },
     [server, ws]
@@ -49,11 +49,17 @@ export default function ServerConsole({
 
     observer.observe(ref.current!);
 
-    ws.addEventListener('ServerProcessRead', (event) => {
+    const serverProcessReadEvent = (event: ServerProcessReadEvent) => {
       if (event.serverId === server.id) {
         term!.write(event.data);
       }
-    });
+    };
+    ws.addEventListener('ServerProcessRead', serverProcessReadEvent);
+
+    return () => {
+      observer.disconnect();
+      ws.removeEventListener('ServerProcessRead', serverProcessReadEvent);
+    };
   }, [fitAddon, handleSendLine, server.id, term, webglAddon, ws]);
 
   return (

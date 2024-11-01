@@ -7,16 +7,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
-import Popover from '@mui/material/Popover';
-import MenuList from '@mui/material/MenuList';
 import TableBody from '@mui/material/TableBody';
 import TableContainer from '@mui/material/TableContainer';
-import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 
-import FileType from 'src/abc/file-type';
 import { ServerFile, ServerFileList, ServerDirectory } from 'src/api/file-manager';
 
-import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
 import FileDialogs from './file-dialogs';
@@ -26,6 +21,7 @@ import { TableInvalidPath } from './table-invalid-path';
 import ServerFileTableRow from './server-file-table-row';
 import ServerFileTableHead from './server-file-table-head';
 import ServerFolderTableRow from './server-folder-table-row';
+import ServerFileContextMenu from './server-file-contextmenu';
 
 type Props = {
   server: Server | null;
@@ -61,6 +57,8 @@ export default function ServerFiles({ server, ws }: Props) {
   const [renameValue, setRenameValue] = useState('');
   const [removeOpen, setRemoveOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const [mkdirOpen, setMkdirOpen] = useState(false);
+  const [mkdirValue, setMkdirValue] = useState('');
 
   // upload
   const [isDragActive, setIsDragActive] = useState(false);
@@ -74,6 +72,7 @@ export default function ServerFiles({ server, ws }: Props) {
     filterName,
   });
 
+  // ファイル管理系
   const reloadFiles = useCallback(async () => {
     setIsInValidPath(false);
     try {
@@ -105,20 +104,52 @@ export default function ServerFiles({ server, ws }: Props) {
     [directory?.src, reloadFiles, setParams, table]
   );
 
-  const onContextMenu = (
-    event: React.MouseEvent<HTMLTableRowElement | HTMLTableSectionElement>,
-    file?: FileManager
-  ) => {
-    event.preventDefault();
+  const handleSelect = (e: React.MouseEvent<HTMLTableRowElement>, f: FileManager) => {
+    // そのまま選択
+    if (table.selected.length === 0) {
+      table.onSelectRow(f);
+      return;
+    }
 
-    if (file && !table.selected.includes(file)) table.setSelected([file]);
+    const targetIndex = filteredFiles.indexOf(f);
 
-    const [clientX, clientY] = [event.clientX, event.clientY];
-    setPosition({ top: clientY, left: clientX });
+    if (e.shiftKey) {
+      // 選択中のものが1つの場合
+      if (table.selected.length === 1) {
+        const start = Math.min(filteredFiles.indexOf(table.selected[0]), targetIndex);
+        const end = Math.max(filteredFiles.indexOf(table.selected[0]), targetIndex);
+        table.setSelected(filteredFiles.slice(start, end + 1));
+        return;
+      }
 
-    setMenuOpen(true);
+      // 選択中のインデックスリスト
+      const filteredFilesIndexList = table.selected.map((file) => filteredFiles.indexOf(file));
+
+      // 選択するファイルと一番距離の遠いファイルのインデックスを取得
+      const farthestIndex = filteredFilesIndexList.reduce((prev, curr) =>
+        Math.abs(curr - targetIndex) > Math.abs(prev - targetIndex) ? curr : prev
+      );
+
+      const start = Math.min(farthestIndex, targetIndex);
+      const end = Math.max(farthestIndex, targetIndex);
+      table.setSelected(filteredFiles.slice(start, end + 1));
+
+      return;
+    }
+
+    if (e.ctrlKey) {
+      if (table.selected.includes(f)) {
+        table.setSelected(table.selected.filter((value) => value !== f));
+        return;
+      }
+      table.setSelected([...table.selected, f]);
+      return;
+    }
+
+    table.setSelected([f]);
   };
 
+  // メニュー系
   const handleCloseMenu = () => {
     setMenuOpen(false);
   };
@@ -129,6 +160,12 @@ export default function ServerFiles({ server, ws }: Props) {
     setRenameOpen(true);
   };
 
+  const handlMkdirDialogOpen = () => {
+    handleCloseMenu();
+    setMkdirOpen(true);
+  };
+
+  // ファイル操作系
   const handleSetCopyFiles = useCallback(() => {
     handleCloseMenu();
     if (!table.selected.length) return;
@@ -205,6 +242,21 @@ export default function ServerFiles({ server, ws }: Props) {
     const res = await file.extract(file.fileName);
   }, [table]);
 
+  // イベント系
+  const onContextMenu = (
+    event: React.MouseEvent<HTMLTableRowElement | HTMLTableSectionElement>,
+    file?: FileManager
+  ) => {
+    event.preventDefault();
+
+    if (file && !table.selected.includes(file)) table.setSelected([file]);
+
+    const [clientX, clientY] = [event.clientX, event.clientY];
+    setPosition({ top: clientY, left: clientX });
+
+    setMenuOpen(true);
+  };
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (renameOpen || removeOpen || archiveOpen) return;
@@ -228,51 +280,6 @@ export default function ServerFiles({ server, ws }: Props) {
 
   const handleClick = (e: React.MouseEvent<HTMLTableElement>) => {
     if (e.target === e.currentTarget) table.resetSelected();
-  };
-
-  const handleSelect = (e: React.MouseEvent<HTMLTableRowElement>, f: FileManager) => {
-    // そのまま選択
-    if (table.selected.length === 0) {
-      table.onSelectRow(f);
-      return;
-    }
-
-    const targetIndex = filteredFiles.indexOf(f);
-
-    if (e.shiftKey) {
-      // 選択中のものが1つの場合
-      if (table.selected.length === 1) {
-        const start = Math.min(filteredFiles.indexOf(table.selected[0]), targetIndex);
-        const end = Math.max(filteredFiles.indexOf(table.selected[0]), targetIndex);
-        table.setSelected(filteredFiles.slice(start, end + 1));
-        return;
-      }
-
-      // 選択中のインデックスリスト
-      const filteredFilesIndexList = table.selected.map((file) => filteredFiles.indexOf(file));
-
-      // 選択するファイルと一番距離の遠いファイルのインデックスを取得
-      const farthestIndex = filteredFilesIndexList.reduce((prev, curr) =>
-        Math.abs(curr - targetIndex) > Math.abs(prev - targetIndex) ? curr : prev
-      );
-
-      const start = Math.min(farthestIndex, targetIndex);
-      const end = Math.max(farthestIndex, targetIndex);
-      table.setSelected(filteredFiles.slice(start, end + 1));
-
-      return;
-    }
-
-    if (e.ctrlKey) {
-      if (table.selected.includes(f)) {
-        table.setSelected(table.selected.filter((value) => value !== f));
-        return;
-      }
-      table.setSelected([...table.selected, f]);
-      return;
-    }
-
-    table.setSelected([f]);
   };
 
   useEffect(() => {
@@ -313,6 +320,7 @@ export default function ServerFiles({ server, ws }: Props) {
           copyFiles={copyFiles}
           cutFiles={cutFiles}
           handleDownload={handleDownload}
+          handleCompress={handleCompress}
         />
         <Scrollbar>
           <TableContainer
@@ -324,6 +332,7 @@ export default function ServerFiles({ server, ws }: Props) {
               '&:focus-visible': { outline: 'none' },
             }}
             onClick={handleClick}
+            onContextMenu={onContextMenu}
           >
             <Table
               sx={{
@@ -354,7 +363,7 @@ export default function ServerFiles({ server, ws }: Props) {
                       <ServerFolderTableRow
                         key={src}
                         folder={file}
-                        path={src}
+                        src={src}
                         selected={table.selected.includes(file)}
                         isCutFileSelected={cutFiles.includes(file)}
                         onDoubleClick={handleChangePath}
@@ -390,77 +399,22 @@ export default function ServerFiles({ server, ws }: Props) {
         <FileDropZone isActive={isDragActive} setIsActive={setIsDragActive} directory={directory} />
       </Stack>
 
-      <Popover
-        anchorReference="anchorPosition"
-        open={menuOpen}
-        onClose={handleCloseMenu}
-        anchorPosition={position}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
-        }}
-      >
-        <MenuList
-          dense
-          sx={{
-            p: 0.5,
-            gap: 0.5,
-            width: 140,
-            display: 'flex',
-            flexDirection: 'column',
-            [`& .${menuItemClasses.root}`]: {
-              px: 1,
-              gap: 2,
-              borderRadius: 0.75,
-              [`&.${menuItemClasses.selected}`]: { backgroundColor: 'action.selected' },
-            },
-            outline: 'none',
-          }}
-        >
-          {table.selected.length === 1 && table.selected[0].type.equal(FileType.ARCHIVE) && (
-            <MenuItem onClick={handleExtract}>
-              <Iconify icon="solar:archive-up-bold" />
-              展開
-            </MenuItem>
-          )}
-          <MenuItem onClick={handleSetCopyFiles}>
-            <Iconify icon="solar:copy-bold" />
-            コピー
-          </MenuItem>
-          <MenuItem onClick={handleSetCutFiles}>
-            <Iconify icon="solar:scissors-bold" />
-            切り取り
-          </MenuItem>
-          {table.selected.length === 1 && (
-            <MenuItem onClick={handleRenameDialogOpen}>
-              <Iconify icon="fluent:rename-16-filled" />
-              名前の変更
-            </MenuItem>
-          )}
-
-          {table.selected.length === 1 && table.selected[0] instanceof ServerFile && (
-            <MenuItem onClick={handleDownload}>
-              <Iconify icon="solar:download-bold" />
-              ダウンロード
-            </MenuItem>
-          )}
-
-          <MenuItem onClick={handleCompress}>
-            <Iconify icon="solar:zip-file-bold" />
-            圧縮
-          </MenuItem>
-
-          <MenuItem
-            onClick={() => {
-              handleCloseMenu();
-              setRemoveOpen(true);
-            }}
-          >
-            <Iconify icon="solar:trash-bin-trash-bold" />
-            削除
-          </MenuItem>
-        </MenuList>
-      </Popover>
+      <ServerFileContextMenu
+        selected={table.selected}
+        menuOpen={menuOpen}
+        handleCloseMenu={handleCloseMenu}
+        position={position}
+        handleExtract={handleExtract}
+        handleSetCopyFiles={handleSetCopyFiles}
+        handleSetCutFiles={handleSetCutFiles}
+        handleRenameDialogOpen={handleRenameDialogOpen}
+        handleDownload={handleDownload}
+        handleCompress={handleCompress}
+        setRemoveOpen={setRemoveOpen}
+        existsMoveFile={copyFiles.length > 0 || cutFiles.length > 0}
+        handlePaste={handlePaste}
+        handlMkdirDialogOpen={handlMkdirDialogOpen}
+      />
 
       <FileDialogs
         selected={table.selected}
@@ -477,6 +431,10 @@ export default function ServerFiles({ server, ws }: Props) {
         setArchiveOpen={setArchiveOpen}
         archiveFileName={archiveFileName}
         setArchiveFileName={setArchiveFileName}
+        mkdirOpen={mkdirOpen}
+        setMkdirOpen={setMkdirOpen}
+        mkdirValue={mkdirValue}
+        setMkdirValue={setMkdirValue}
       />
     </>
   );

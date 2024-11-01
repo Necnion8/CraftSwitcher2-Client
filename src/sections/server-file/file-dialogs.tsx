@@ -15,6 +15,7 @@ import { fDateTime } from 'src/utils/format-time';
 import { ServerFileList } from 'src/api/file-manager';
 
 import { Iconify } from 'src/components/iconify';
+import FileType from '../../abc/file-type';
 
 type Props = {
   selected: FileManager[];
@@ -31,6 +32,10 @@ type Props = {
   setArchiveOpen: React.Dispatch<React.SetStateAction<boolean>>;
   archiveFileName: string;
   setArchiveFileName: React.Dispatch<React.SetStateAction<string>>;
+  mkdirOpen: boolean;
+  setMkdirOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  mkdirValue: string;
+  setMkdirValue: React.Dispatch<React.SetStateAction<string>>;
 };
 
 function FileIcon({ name, width = 18 }: { name: string; width: number | string }) {
@@ -52,9 +57,31 @@ export default function FileDialogs({
   setArchiveOpen,
   archiveFileName,
   setArchiveFileName,
+  mkdirOpen,
+  setMkdirOpen,
+  mkdirValue,
+  setMkdirValue,
 }: Props) {
+  const [renameError, setRenameError] = React.useState(false);
+  const [mkdirError, setMkdirError] = React.useState(false);
+
+  const handleRenameClose = () => {
+    setRenameOpen(false);
+    setRenameError(false);
+  };
+
+  const handleMkdirClose = () => {
+    setMkdirOpen(false);
+    setMkdirError(false);
+  };
+
   const handleRename = async (e: FormEvent) => {
     e.preventDefault();
+    if (renameValue === '') {
+      setRenameError(true);
+      return;
+    }
+
     setRenameOpen(false);
     const taskId = await selected[0].rename(renameValue);
 
@@ -89,12 +116,24 @@ export default function FileDialogs({
     archiveFiles.archive(archiveFileName, directory?.src!, directory?.src!);
   };
 
+  const handleMkdir = async (e: FormEvent) => {
+    e.preventDefault();
+    if (mkdirValue === '') {
+      setMkdirError(true);
+      return;
+    }
+
+    const res = await directory?.mkdir(mkdirValue);
+
+    setMkdirOpen(false);
+  };
+
   return (
     <>
-      <Dialog open={renameOpen} onClose={() => setRenameOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog open={renameOpen} onClose={handleRenameClose} maxWidth="xs" fullWidth>
         <DialogTitle>名前の変更</DialogTitle>
         <IconButton
-          onClick={() => setRenameOpen(false)}
+          onClick={() => handleRenameClose}
           sx={(theme) => ({
             position: 'absolute',
             right: 8,
@@ -112,10 +151,13 @@ export default function FileDialogs({
               variant="outlined"
               value={renameValue}
               onChange={(e) => setRenameValue(e.target.value)}
+              helperText={renameError ? 'ファイル名を入力してください' : ''}
+              error={renameError}
+              placeholder="ファイル名"
             />
           </DialogContent>
           <DialogActions>
-            <Button color="inherit" variant="outlined" onClick={() => setRenameOpen(false)}>
+            <Button color="inherit" variant="outlined" onClick={handleRenameClose}>
               キャンセル
             </Button>
             <Button color="inherit" variant="contained" type="submit">
@@ -125,7 +167,7 @@ export default function FileDialogs({
         </form>
       </Dialog>
 
-      <Dialog open={removeOpen} onClose={() => setRemoveOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog open={removeOpen} onClose={handleRenameClose} maxWidth="sm" fullWidth>
         <DialogTitle>
           {selected.length === 1
             ? 'このファイルを完全に削除しますか？'
@@ -157,7 +199,10 @@ export default function FileDialogs({
                   <Typography variant="body2" mt={2}>
                     {selected[0]?.type.displayName}
                   </Typography>
-                  <Typography variant="body2">{selected[0]?.size} KB</Typography>
+                  {!selected[0]?.type.equal(FileType.DIRECTORY) && (
+                    <Typography variant="body2">{selected[0]?.size} KB</Typography>
+                  )}
+
                   <Typography variant="body2">{fDateTime(selected[0]?.modifyAt)}</Typography>
                 </Grid>
               </Grid>
@@ -200,6 +245,43 @@ export default function FileDialogs({
           </DialogContent>
           <DialogActions>
             <Button color="inherit" variant="outlined" onClick={() => setArchiveOpen(false)}>
+              キャンセル
+            </Button>
+            <Button color="inherit" variant="contained" type="submit">
+              完了
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      <Dialog open={mkdirOpen} onClose={handleMkdirClose} maxWidth="xs" fullWidth>
+        <DialogTitle>新規フォルダ作成</DialogTitle>
+        <IconButton
+          onClick={handleMkdirClose}
+          sx={(theme) => ({
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: theme.palette.grey[500],
+          })}
+        >
+          <Iconify icon="eva:close-outline" />
+        </IconButton>
+        <form onSubmit={handleMkdir}>
+          <DialogContent>
+            <TextField
+              autoFocus
+              fullWidth
+              variant="outlined"
+              value={mkdirValue}
+              onChange={(e) => setMkdirValue(e.target.value)}
+              helperText={renameError ? 'フォルダ名を入力してください' : ''}
+              error={renameError}
+              placeholder="フォルダ名"
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button color="inherit" variant="outlined" onClick={handleMkdirClose}>
               キャンセル
             </Button>
             <Button color="inherit" variant="contained" type="submit">

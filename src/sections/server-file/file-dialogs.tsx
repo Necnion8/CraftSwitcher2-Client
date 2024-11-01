@@ -1,4 +1,3 @@
-import type WebSocketClient from 'src/api/ws-client';
 import type { FileManager, ServerDirectory } from 'src/api/file-manager';
 
 import React, { type FormEvent } from 'react';
@@ -8,12 +7,14 @@ import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import { Dialog, DialogTitle, DialogActions, DialogContent } from '@mui/material';
+import { Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 
 import { fDateTime } from 'src/utils/format-time';
 
 import FileType from 'src/abc/file-type';
 import { ServerFileList } from 'src/api/file-manager';
+import type { FileTaskEvent } from 'src/api/ws-client';
+import type WebSocketClient from 'src/api/ws-client';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -21,7 +22,7 @@ type Props = {
   selected: FileManager[];
   resetSelected: () => void;
   ws: WebSocketClient | null;
-  handleChangePath: (path: string) => void;
+  reloadFiles: () => void;
   directory: ServerDirectory | null;
   renameOpen: boolean;
   setRenameOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -47,7 +48,7 @@ export default function FileDialogs({
   selected,
   resetSelected,
   ws,
-  handleChangePath,
+  reloadFiles,
   directory,
   renameOpen,
   setRenameOpen,
@@ -89,11 +90,13 @@ export default function FileDialogs({
 
     if (taskId === false) return; // TODO: エラーハンドリング
 
-    ws?.addEventListener('FileTaskEnd', (fileTaskEvent) => {
+    const fileTaskEndEvent = (fileTaskEvent: FileTaskEvent) => {
       if (fileTaskEvent.taskId === taskId) {
-        handleChangePath(directory?.src!!);
+        reloadFiles();
+        ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
       }
-    });
+    };
+    ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
   };
 
   const handleRemove = async (e: FormEvent) => {
@@ -113,11 +116,13 @@ export default function FileDialogs({
           return;
         }
 
-        ws?.addEventListener('FileTaskEnd', (fileTaskEvent) => {
+        const fileTaskEndEvent = (fileTaskEvent: FileTaskEvent) => {
           if (fileTaskEvent.src === file.src) {
             done += 1;
+            ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
           }
-        });
+        };
+        ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
       })
     );
 
@@ -129,15 +134,15 @@ export default function FileDialogs({
     let i = 1;
 
     const checkDone = () => {
-      if (done === length || i > 20) {
-        handleChangePath(directory?.src!);
+      if (done === length || i > 40) {
+        reloadFiles();
         clearInterval(interval);
       }
 
       i += 1;
     };
 
-    const interval = setInterval(checkDone, 1000);
+    const interval = setInterval(checkDone, 500);
   };
 
   const handleCompress = async (e: FormEvent) => {
@@ -152,11 +157,13 @@ export default function FileDialogs({
     const res = await archiveFiles.archive(archiveFileName, directory?.src!, directory?.src!);
     setArchiveOpen(false);
 
-    ws?.addEventListener('FileTaskEnd', (fileTaskEvent) => {
+    const fileTaskEndEvent = (fileTaskEvent: FileTaskEvent) => {
       if (fileTaskEvent.taskId === res) {
-        handleChangePath(directory?.src!);
+        reloadFiles();
+        ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
       }
-    });
+    };
+    ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
   };
 
   const handleMkdir = async (e: FormEvent) => {
@@ -168,12 +175,16 @@ export default function FileDialogs({
 
     const res = await directory?.mkdir(mkdirValue);
     setMkdirOpen(false);
+    setMkdirValue('');
 
-    ws?.addEventListener('FileTaskEnd', (fileTaskEvent) => {
+    // TODO: レスポンスのtask_idがnullになっている
+    const fileTaskEndEvent = (fileTaskEvent: FileTaskEvent) => {
       if (fileTaskEvent.taskId === res) {
-        handleChangePath(directory?.src!);
+        reloadFiles();
+        ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
       }
-    });
+    };
+    ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
   };
 
   return (

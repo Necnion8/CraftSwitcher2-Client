@@ -1,5 +1,4 @@
 import type Server from 'src/api/server';
-import type WebSocketClient from 'src/api/ws-client';
 import type { FileManager } from 'src/api/file-manager';
 
 import { useSearchParams } from 'react-router-dom';
@@ -10,6 +9,7 @@ import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableContainer from '@mui/material/TableContainer';
 
+import WebSocketClient, { FileTaskEvent } from 'src/api/ws-client';
 import { ServerFile, ServerFileList, ServerDirectory } from 'src/api/file-manager';
 
 import { Scrollbar } from 'src/components/scrollbar';
@@ -182,40 +182,92 @@ export default function ServerFiles({ server, ws }: Props) {
     setCopyFiles([]);
   }, [table.selected]);
 
-  const handlePaste = useCallback(() => {
+  const handlePaste = useCallback(async () => {
     handleCloseMenu();
     if (copyFiles.length) {
       // TODO: 重複のときの置き換え確認
+      const { length } = copyFiles;
+      let error = 0;
+      let done = 0;
+      await Promise.all(
+        copyFiles.map(async (file) => {
+          try {
+            const res = await file.copy(directory?.src!);
+            if (!res) error += 1;
+          } catch (e) {
+            console.log(e);
+          }
+          const fileTaskEndEvent = (e: FileTaskEvent) => {
+            if (e.src === file.src) {
+              if (e.result !== 'success') {
+                error += 1;
+                return;
+              }
+              done += 1;
+              ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
+            }
+          };
+          ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
+        })
+      );
+
+      if (error) {
+        /* empty */
+      }
       // TODO: エラーハンドリング
-      copyFiles.forEach((file) => {
-        try {
-          file.copy(directory?.src!);
-        } catch (e) {
-          console.log(e);
+      let i = 1;
+      const checkDone = () => {
+        if (done === length || i > 40) {
+          reloadFiles();
+          clearInterval(interval);
         }
 
-        ws?.addEventListener('FileTaskEnd', (e) => {
-          if (e.src === file.src) {
-            handleChangePath(directory?.src!);
-          }
-        });
-      });
+        i += 1;
+      };
+      const interval = setInterval(checkDone, 500);
     }
     if (cutFiles.length) {
-      cutFiles.forEach((file) => {
-        try {
-          file.move(directory?.src!);
-        } catch (e) {
-          console.log(e);
-        }
-        ws?.addEventListener('FileTaskEnd', (e) => {
-          if (e.src === file.src) {
-            handleChangePath(directory?.src!);
+      const { length } = cutFiles;
+      let error = 0;
+      let done = 0;
+      await Promise.all(
+        cutFiles.map(async (file) => {
+          try {
+            const res = await file.move(directory?.src!);
+            if (!res) error += 1;
+          } catch (e) {
+            console.log(e);
           }
-        });
-      });
+          const fileTaskEndEvent = (e: FileTaskEvent) => {
+            if (e.src === file.src) {
+              if (e.result !== 'success') {
+                error += 1;
+                return;
+              }
+              done += 1;
+              ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
+            }
+          };
+          ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
+        })
+      );
+
+      if (error) {
+        /* empty */
+      }
+      // TODO: エラーハンドリング
+      let i = 1;
+      const checkDone = () => {
+        if (done === length || i > 40) {
+          reloadFiles();
+          clearInterval(interval);
+        }
+
+        i += 1;
+      };
+      const interval = setInterval(checkDone, 500);
     }
-  }, [copyFiles, cutFiles, directory, handleChangePath, ws]);
+  }, [copyFiles, cutFiles, directory?.src, reloadFiles, ws]);
 
   const handleDownload = useCallback(async () => {
     handleCloseMenu();
@@ -422,7 +474,7 @@ export default function ServerFiles({ server, ws }: Props) {
         selected={table.selected}
         resetSelected={table.resetSelected}
         ws={ws}
-        handleChangePath={handleChangePath}
+        reloadFiles={reloadFiles}
         directory={directory}
         renameOpen={renameOpen}
         setRenameOpen={setRenameOpen}

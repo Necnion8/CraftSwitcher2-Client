@@ -64,9 +64,9 @@ export default function ServerFileToolbar({
   const theme = useTheme();
   const layoutQuery: Breakpoint = 'lg';
 
-  const path = directory?.src || '';
-  const location = directory?.path || '';
-  const pathSegments = path.split('/');
+  const src = directory?.src || '';
+  const path = directory?.path || '';
+  const srcSegments = src.split('/');
 
   const router = useRouter();
 
@@ -94,14 +94,14 @@ export default function ServerFileToolbar({
         <Tooltip title="親ディレクトリへ">
           <Button
             sx={{ minWidth: 'unset' }}
-            onClick={() => handleChangePath(location)}
-            disabled={path === '/'}
+            onClick={() => handleChangePath(path)}
+            disabled={src === '/'}
           >
             <Iconify icon="eva:arrow-upward-outline" />
           </Button>
         </Tooltip>
         <Tooltip title="最新の情報に更新">
-          <Button sx={{ minWidth: 'unset' }} onClick={() => handleChangePath(path)}>
+          <Button sx={{ minWidth: 'unset' }} onClick={() => handleChangePath(src)}>
             <Iconify icon="eva:refresh-outline" />
           </Button>
         </Tooltip>
@@ -119,9 +119,9 @@ export default function ServerFileToolbar({
           <Button sx={{ minWidth: 'unset', px: 0.7, py: 0 }} onClick={() => handleChangePath('/')}>
             <Iconify icon="eva:home-outline" />
           </Button>
-          {pathSegments.map((name, index) => {
+          {srcSegments.map((name, index) => {
             if (name === '') return null;
-            const p = `${pathSegments.slice(0, index + 1).join('/')}`;
+            const p = `${srcSegments.slice(0, index + 1).join('/')}`;
 
             return (
               <Button

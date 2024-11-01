@@ -1,5 +1,4 @@
 import type Server from 'src/api/server';
-import type WebSocketClient from 'src/api/ws-client';
 import type { FileManager } from 'src/api/file-manager';
 
 import { useSearchParams } from 'react-router-dom';
@@ -7,15 +6,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
-import Popover from '@mui/material/Popover';
-import MenuList from '@mui/material/MenuList';
 import TableBody from '@mui/material/TableBody';
 import TableContainer from '@mui/material/TableContainer';
-import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 
+import WebSocketClient, { FileTaskEvent } from 'src/api/ws-client';
 import { ServerFile, ServerFileList, ServerDirectory } from 'src/api/file-manager';
 
-import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
 import FileDialogs from './file-dialogs';
@@ -25,6 +21,7 @@ import { TableInvalidPath } from './table-invalid-path';
 import ServerFileTableRow from './server-file-table-row';
 import ServerFileTableHead from './server-file-table-head';
 import ServerFolderTableRow from './server-folder-table-row';
+import ServerFileContextMenu from './server-file-contextmenu';
 
 type Props = {
   server: Server | null;
@@ -36,25 +33,38 @@ type AnchorPosition = { top: number; left: number } | undefined;
 export default function ServerFiles({ server, ws }: Props) {
   const table = useTable();
 
+  // path
   const [params, setParams] = useSearchParams();
+  const [isInvalidPath, setIsInValidPath] = useState(false);
 
+  // fileData
   const [files, setFiles] = useState<ServerFileList>(new ServerFileList());
   const [directory, setDirectory] = useState<ServerDirectory | null>(null);
 
-  const [filterName, setFilterName] = useState('');
-
-  const [isInvalidPath, setIsInValidPath] = useState(false);
-
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [renameOpen, setRenameOpen] = useState(false);
-  const [renameValue, setRenameValue] = useState('');
-  const [removeOpen, setRemoveOpen] = useState(false);
-
+  // copy cut
   const [copyFiles, setCopyFiles] = useState<FileManager[]>([]);
   const [cutFiles, setCutFiles] = useState<FileManager[]>([]);
 
+  // filter
+  const [filterName, setFilterName] = useState('');
+
+  // menu
+  const [menuOpen, setMenuOpen] = useState(false);
   const [position, setPosition] = useState<AnchorPosition>(undefined);
+
+  // dialog
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
+  const [removeOpen, setRemoveOpen] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [mkdirOpen, setMkdirOpen] = useState(false);
+  const [mkdirValue, setMkdirValue] = useState('');
+
+  // upload
   const [isDragActive, setIsDragActive] = useState(false);
+
+  // archive
+  const [archiveFileName, setArchiveFileName] = useState('');
 
   const filteredFiles = applyFilter({
     inputData: files,
@@ -62,19 +72,7 @@ export default function ServerFiles({ server, ws }: Props) {
     filterName,
   });
 
-  useEffect(() => {
-    if (!params.has('path')) {
-      setParams((prev) => {
-        prev.set('path', '/');
-        return prev;
-      });
-    }
-
-    reloadFiles();
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params, server]);
-
+  // ファイル管理系
   const reloadFiles = useCallback(async () => {
     setIsInValidPath(false);
     try {
@@ -89,13 +87,13 @@ export default function ServerFiles({ server, ws }: Props) {
         setIsInValidPath(true);
         return;
       }
-      console.error(e);
+      throw e;
     }
   }, [params, server]);
 
   const handleChangePath = useCallback(
     (path: string) => {
-      if (path === directory?.path) reloadFiles();
+      if (path === directory?.src) reloadFiles();
 
       table.resetSelected();
       setParams((prev) => {
@@ -103,124 +101,8 @@ export default function ServerFiles({ server, ws }: Props) {
         return prev;
       });
     },
-    [directory?.path, reloadFiles, setParams, table]
+    [directory?.src, reloadFiles, setParams, table]
   );
-
-  const onContextMenu = (
-    event: React.MouseEvent<HTMLTableRowElement | HTMLTableSectionElement>,
-    file?: FileManager
-  ) => {
-    event.preventDefault();
-
-    if (file && !table.selected.includes(file)) table.setSelected([file]);
-
-    const [clientX, clientY] = [event.clientX, event.clientY];
-    setPosition({ top: clientY, left: clientX });
-
-    setMenuOpen(true);
-  };
-
-  const handleCloseMenu = () => {
-    setMenuOpen(false);
-  };
-
-  const handleRenameDialogOpen = () => {
-    handleCloseMenu();
-    setRenameValue(table.selected[0].name);
-    setRenameOpen(true);
-  };
-
-  const handleSetCopyFiles = useCallback(() => {
-    handleCloseMenu();
-    if (!table.selected.length) return;
-
-    setCopyFiles(table.selected);
-    setCutFiles([]);
-  }, [table.selected]);
-
-  const handleSetCutFiles = useCallback(() => {
-    handleCloseMenu();
-    if (!table.selected.length) return;
-
-    setCutFiles(table.selected);
-    setCopyFiles([]);
-  }, [table.selected]);
-
-  const handlePaste = useCallback(() => {
-    handleCloseMenu();
-    if (copyFiles.length) {
-      // TODO: 重複のときの置き換え確認
-      // TODO: エラーハンドリング
-      copyFiles.forEach((file) => {
-        try {
-          file.copy(directory?.path!);
-        } catch (e) {
-          console.log(e);
-        }
-
-        ws?.addEventListener('FileTaskEnd', (e) => {
-          if (e.src === file.path) {
-            handleChangePath(directory?.path!);
-          }
-        });
-      });
-    }
-    if (cutFiles.length) {
-      cutFiles.forEach((file) => {
-        try {
-          file.move(directory?.path!);
-        } catch (e) {
-          console.log(e);
-        }
-        ws?.addEventListener('FileTaskEnd', (e) => {
-          if (e.src === file.path) {
-            handleChangePath(directory?.path!);
-          }
-        });
-      });
-    }
-  }, [copyFiles, cutFiles, directory, handleChangePath, ws]);
-
-  const handleDownload = useCallback(async () => {
-    handleCloseMenu();
-    const file = table.selected[0] as ServerFile;
-    const fileData = await file.getData();
-
-    const url = window.URL.createObjectURL(fileData);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = file.name;
-    link.click();
-  }, [table.selected]);
-
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (renameOpen || removeOpen) return;
-      if (e.repeat) return;
-
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        setRemoveOpen(true);
-      }
-      if (e.key === 'c' && e.ctrlKey) {
-        handleSetCopyFiles();
-      }
-      if (e.key === 'x' && e.ctrlKey) {
-        handleSetCutFiles();
-      }
-      if (e.key === 'v' && e.ctrlKey) {
-        handlePaste();
-      }
-    },
-    [handlePaste, handleSetCopyFiles, handleSetCutFiles, removeOpen, renameOpen]
-  );
-
-  const handleArchive = useCallback(async () => {
-    const archiveFiles = new ServerFileList(...table.selected);
-  }, [table.selected]);
-
-  const handleClick = (e: React.MouseEvent<HTMLTableElement>) => {
-    if (e.target === e.currentTarget) table.resetSelected();
-  };
 
   const handleSelect = (e: React.MouseEvent<HTMLTableRowElement>, f: FileManager) => {
     // そのまま選択
@@ -267,10 +149,206 @@ export default function ServerFiles({ server, ws }: Props) {
     table.setSelected([f]);
   };
 
+  // メニュー系
+  const handleCloseMenu = () => {
+    setMenuOpen(false);
+  };
+
+  const handleRenameDialogOpen = () => {
+    handleCloseMenu();
+    setRenameValue(table.selected[0].name);
+    setRenameOpen(true);
+  };
+
+  const handlMkdirDialogOpen = () => {
+    handleCloseMenu();
+    setMkdirOpen(true);
+  };
+
+  // ファイル操作系
+  const handleSetCopyFiles = useCallback(() => {
+    handleCloseMenu();
+    if (!table.selected.length) return;
+
+    setCopyFiles(table.selected);
+    setCutFiles([]);
+  }, [table.selected]);
+
+  const handleSetCutFiles = useCallback(() => {
+    handleCloseMenu();
+    if (!table.selected.length) return;
+
+    setCutFiles(table.selected);
+    setCopyFiles([]);
+  }, [table.selected]);
+
+  const handlePaste = useCallback(async () => {
+    handleCloseMenu();
+    if (copyFiles.length) {
+      // TODO: 重複のときの置き換え確認
+      const { length } = copyFiles;
+      let error = 0;
+      let done = 0;
+      await Promise.all(
+        copyFiles.map(async (file) => {
+          try {
+            const res = await file.copy(directory?.src!);
+            if (!res) error += 1;
+          } catch (e) {
+            console.log(e);
+          }
+          const fileTaskEndEvent = (e: FileTaskEvent) => {
+            if (e.src === file.src) {
+              if (e.result !== 'success') {
+                error += 1;
+                return;
+              }
+              done += 1;
+              ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
+            }
+          };
+          ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
+        })
+      );
+
+      if (error) {
+        /* empty */
+      }
+      // TODO: エラーハンドリング
+      let i = 1;
+      const checkDone = () => {
+        if (done === length || i > 40) {
+          reloadFiles();
+          clearInterval(interval);
+        }
+
+        i += 1;
+      };
+      const interval = setInterval(checkDone, 500);
+    }
+    if (cutFiles.length) {
+      const { length } = cutFiles;
+      let error = 0;
+      let done = 0;
+      await Promise.all(
+        cutFiles.map(async (file) => {
+          try {
+            const res = await file.move(directory?.src!);
+            if (!res) error += 1;
+          } catch (e) {
+            console.log(e);
+          }
+          const fileTaskEndEvent = (e: FileTaskEvent) => {
+            if (e.src === file.src) {
+              if (e.result !== 'success') {
+                error += 1;
+                return;
+              }
+              done += 1;
+              ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
+            }
+          };
+          ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
+        })
+      );
+
+      if (error) {
+        /* empty */
+      }
+      // TODO: エラーハンドリング
+      let i = 1;
+      const checkDone = () => {
+        if (done === length || i > 40) {
+          reloadFiles();
+          clearInterval(interval);
+        }
+
+        i += 1;
+      };
+      const interval = setInterval(checkDone, 500);
+    }
+  }, [copyFiles, cutFiles, directory?.src, reloadFiles, ws]);
+
+  const handleDownload = useCallback(async () => {
+    handleCloseMenu();
+    const file = table.selected[0] as ServerFile;
+    const fileData = await file.getData();
+
+    const url = window.URL.createObjectURL(fileData);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = file.name;
+    link.click();
+  }, [table.selected]);
+
+  const handleCompress = () => {
+    handleCloseMenu();
+
+    setArchiveFileName(`${table.selected[0].fileName}.zip`);
+    setArchiveOpen(true);
+  };
+
+  const handleExtract = useCallback(async () => {
+    handleCloseMenu();
+    const file = table.selected[0] as ServerFile;
+    const res = await file.extract(file.fileName);
+  }, [table]);
+
+  // イベント系
+  const onContextMenu = (
+    event: React.MouseEvent<HTMLTableRowElement | HTMLTableSectionElement>,
+    file?: FileManager
+  ) => {
+    event.preventDefault();
+
+    if (file && !table.selected.includes(file)) table.setSelected([file]);
+
+    const [clientX, clientY] = [event.clientX, event.clientY];
+    setPosition({ top: clientY, left: clientX });
+
+    setMenuOpen(true);
+  };
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (renameOpen || removeOpen || archiveOpen) return;
+      if (e.repeat) return;
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        setRemoveOpen(true);
+      }
+      if (e.key === 'c' && e.ctrlKey) {
+        handleSetCopyFiles();
+      }
+      if (e.key === 'x' && e.ctrlKey) {
+        handleSetCutFiles();
+      }
+      if (e.key === 'v' && e.ctrlKey) {
+        handlePaste();
+      }
+    },
+    [archiveOpen, handlePaste, handleSetCopyFiles, handleSetCutFiles, removeOpen, renameOpen]
+  );
+
+  const handleClick = (e: React.MouseEvent<HTMLTableElement>) => {
+    if (e.target === e.currentTarget) table.resetSelected();
+  };
+
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
+
+  useEffect(() => {
+    if (!params.has('path')) {
+      setParams((prev) => {
+        prev.set('path', '/');
+        return prev;
+      });
+    }
+
+    reloadFiles();
+  }, [params, reloadFiles, server, setParams]);
 
   return (
     <>
@@ -294,6 +372,9 @@ export default function ServerFiles({ server, ws }: Props) {
           copyFiles={copyFiles}
           cutFiles={cutFiles}
           handleDownload={handleDownload}
+          handleCompress={handleCompress}
+          handleExtract={handleExtract}
+          handlMkdirDialogOpen={handlMkdirDialogOpen}
         />
         <Scrollbar>
           <TableContainer
@@ -305,6 +386,7 @@ export default function ServerFiles({ server, ws }: Props) {
               '&:focus-visible': { outline: 'none' },
             }}
             onClick={handleClick}
+            onContextMenu={onContextMenu}
           >
             <Table
               sx={{
@@ -329,13 +411,13 @@ export default function ServerFiles({ server, ws }: Props) {
               />
               <TableBody>
                 {filteredFiles.map((file) => {
-                  const { path } = file;
+                  const { src } = file;
                   if (file instanceof ServerDirectory) {
                     return (
                       <ServerFolderTableRow
-                        key={path}
+                        key={src}
                         folder={file}
-                        path={path}
+                        src={src}
                         selected={table.selected.includes(file)}
                         isCutFileSelected={cutFiles.includes(file)}
                         onDoubleClick={handleChangePath}
@@ -347,7 +429,7 @@ export default function ServerFiles({ server, ws }: Props) {
                   if (file instanceof ServerFile) {
                     return (
                       <ServerFileTableRow
-                        key={path}
+                        key={src}
                         file={file}
                         selected={table.selected.includes(file)}
                         isCutFileSelected={cutFiles.includes(file)}
@@ -371,71 +453,28 @@ export default function ServerFiles({ server, ws }: Props) {
         <FileDropZone isActive={isDragActive} setIsActive={setIsDragActive} directory={directory} />
       </Stack>
 
-      <Popover
-        anchorReference="anchorPosition"
-        open={menuOpen}
-        onClose={handleCloseMenu}
-        anchorPosition={position}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
-        }}
-      >
-        <MenuList
-          dense
-          sx={{
-            p: 0.5,
-            gap: 0.5,
-            width: 140,
-            display: 'flex',
-            flexDirection: 'column',
-            [`& .${menuItemClasses.root}`]: {
-              px: 1,
-              gap: 2,
-              borderRadius: 0.75,
-              [`&.${menuItemClasses.selected}`]: { backgroundColor: 'action.selected' },
-            },
-            outline: 'none',
-          }}
-        >
-          <MenuItem onClick={handleSetCopyFiles}>
-            <Iconify icon="solar:copy-bold" />
-            コピー
-          </MenuItem>
-          <MenuItem onClick={handleSetCutFiles}>
-            <Iconify icon="solar:scissors-bold" />
-            切り取り
-          </MenuItem>
-          {table.selected.length === 1 && (
-            <MenuItem onClick={handleRenameDialogOpen}>
-              <Iconify icon="fluent:rename-16-filled" />
-              名前の変更
-            </MenuItem>
-          )}
-
-          {table.selected.length === 1 && table.selected[0] instanceof ServerFile && (
-            <MenuItem onClick={handleDownload}>
-              <Iconify icon="solar:download-bold" />
-              ダウンロード
-            </MenuItem>
-          )}
-
-          <MenuItem
-            onClick={() => {
-              handleCloseMenu();
-              setRemoveOpen(true);
-            }}
-          >
-            <Iconify icon="solar:trash-bin-trash-bold" />
-            削除
-          </MenuItem>
-        </MenuList>
-      </Popover>
+      <ServerFileContextMenu
+        selected={table.selected}
+        menuOpen={menuOpen}
+        handleCloseMenu={handleCloseMenu}
+        position={position}
+        handleExtract={handleExtract}
+        handleSetCopyFiles={handleSetCopyFiles}
+        handleSetCutFiles={handleSetCutFiles}
+        handleRenameDialogOpen={handleRenameDialogOpen}
+        handleDownload={handleDownload}
+        handleCompress={handleCompress}
+        setRemoveOpen={setRemoveOpen}
+        existsMoveFile={copyFiles.length > 0 || cutFiles.length > 0}
+        handlePaste={handlePaste}
+        handlMkdirDialogOpen={handlMkdirDialogOpen}
+      />
 
       <FileDialogs
         selected={table.selected}
+        resetSelected={table.resetSelected}
         ws={ws}
-        handleChangePath={handleChangePath}
+        reloadFiles={reloadFiles}
         directory={directory}
         renameOpen={renameOpen}
         setRenameOpen={setRenameOpen}
@@ -443,6 +482,14 @@ export default function ServerFiles({ server, ws }: Props) {
         setRenameValue={setRenameValue}
         removeOpen={removeOpen}
         setRemoveOpen={setRemoveOpen}
+        archiveOpen={archiveOpen}
+        setArchiveOpen={setArchiveOpen}
+        archiveFileName={archiveFileName}
+        setArchiveFileName={setArchiveFileName}
+        mkdirOpen={mkdirOpen}
+        setMkdirOpen={setMkdirOpen}
+        mkdirValue={mkdirValue}
+        setMkdirValue={setMkdirValue}
       />
     </>
   );

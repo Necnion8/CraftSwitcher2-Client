@@ -25,7 +25,7 @@ function FileIcon({ name, isCutFileSelected }: { name: string; isCutFileSelected
 
 type Props = {
   folder: ServerDirectory;
-  path: string;
+  src: string;
   onDoubleClick: (path: string) => void;
   handleSelect: (e: React.MouseEvent<HTMLTableRowElement>, f: FileManager) => void;
   onContextMenu: (event: React.MouseEvent<HTMLTableRowElement>, file?: FileManager) => void;
@@ -35,7 +35,7 @@ type Props = {
 
 export default function ServerFolderTableRow({
   folder,
-  path,
+  src,
   onDoubleClick,
   handleSelect,
   selected,
@@ -46,7 +46,7 @@ export default function ServerFolderTableRow({
     <TableRow
       onContextMenu={(e) => onContextMenu(e, folder)}
       onClick={(e) => handleSelect(e, folder)}
-      onDoubleClick={() => onDoubleClick(path)}
+      onDoubleClick={() => onDoubleClick(src)}
       sx={{
         backgroundColor: selected ? 'primary.lighter' : null,
         userSelect: 'none',

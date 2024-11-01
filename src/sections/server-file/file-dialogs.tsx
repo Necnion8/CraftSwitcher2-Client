@@ -1,7 +1,7 @@
 import type WebSocketClient from 'src/api/ws-client';
 import type { FileManager, ServerDirectory } from 'src/api/file-manager';
 
-import React, { useCallback, type FormEvent } from 'react';
+import React, { type FormEvent } from 'react';
 
 import Grid from '@mui/material/Grid';
 import Button from '@mui/material/Button';
@@ -12,13 +12,14 @@ import { Dialog, DialogTitle, DialogActions, DialogContent } from '@mui/material
 
 import { fDateTime } from 'src/utils/format-time';
 
+import FileType from 'src/abc/file-type';
 import { ServerFileList } from 'src/api/file-manager';
 
 import { Iconify } from 'src/components/iconify';
-import FileType from '../../abc/file-type';
 
 type Props = {
   selected: FileManager[];
+  resetSelected: () => void;
   ws: WebSocketClient | null;
   handleChangePath: (path: string) => void;
   directory: ServerDirectory | null;
@@ -44,6 +45,7 @@ function FileIcon({ name, width = 18 }: { name: string; width: number | string }
 
 export default function FileDialogs({
   selected,
+  resetSelected,
   ws,
   handleChangePath,
   directory,
@@ -94,26 +96,67 @@ export default function FileDialogs({
     });
   };
 
-  const handleRemove = (e: FormEvent) => {
+  const handleRemove = async (e: FormEvent) => {
     e.preventDefault();
-    if (!selected.length) return;
+    const { length } = selected;
+    if (!length) return;
+    setRemoveOpen(false);
+    resetSelected();
 
-    selected.forEach((file) => {
-      file.remove();
-
-      ws?.addEventListener('FileTaskEnd', (fileTaskEvent) => {
-        if (fileTaskEvent.src === file.src) {
-          handleChangePath(directory?.src!);
+    let error = 0;
+    let done = 0;
+    await Promise.all(
+      selected.map(async (file) => {
+        const taskId = await file.remove();
+        if (taskId === false) {
+          error += 1;
+          return;
         }
-      });
-    });
+
+        ws?.addEventListener('FileTaskEnd', (fileTaskEvent) => {
+          if (fileTaskEvent.src === file.src) {
+            done += 1;
+          }
+        });
+      })
+    );
+
+    if (error) {
+      /* empty */
+    }
+    // TODO: エラーハンドリング
+
+    let i = 1;
+
+    const checkDone = () => {
+      if (done === length || i > 20) {
+        handleChangePath(directory?.src!);
+        clearInterval(interval);
+      }
+
+      i += 1;
+    };
+
+    const interval = setInterval(checkDone, 1000);
   };
 
-  const handleArchive = async (e: FormEvent) => {
+  const handleCompress = async (e: FormEvent) => {
     e.preventDefault();
+    if (archiveFileName === '') {
+      setMkdirError(true);
+      return;
+    }
+
     const archiveFiles = new ServerFileList(...selected);
 
-    archiveFiles.archive(archiveFileName, directory?.src!, directory?.src!);
+    const res = await archiveFiles.archive(archiveFileName, directory?.src!, directory?.src!);
+    setArchiveOpen(false);
+
+    ws?.addEventListener('FileTaskEnd', (fileTaskEvent) => {
+      if (fileTaskEvent.taskId === res) {
+        handleChangePath(directory?.src!);
+      }
+    });
   };
 
   const handleMkdir = async (e: FormEvent) => {
@@ -124,8 +167,13 @@ export default function FileDialogs({
     }
 
     const res = await directory?.mkdir(mkdirValue);
-
     setMkdirOpen(false);
+
+    ws?.addEventListener('FileTaskEnd', (fileTaskEvent) => {
+      if (fileTaskEvent.taskId === res) {
+        handleChangePath(directory?.src!);
+      }
+    });
   };
 
   return (
@@ -151,23 +199,23 @@ export default function FileDialogs({
               variant="outlined"
               value={renameValue}
               onChange={(e) => setRenameValue(e.target.value)}
-              helperText={renameError ? 'ファイル名を入力してください' : ''}
+              helperText={renameError ? '入力してください' : ''}
               error={renameError}
               placeholder="ファイル名"
             />
           </DialogContent>
           <DialogActions>
-            <Button color="inherit" variant="outlined" onClick={handleRenameClose}>
-              キャンセル
-            </Button>
             <Button color="inherit" variant="contained" type="submit">
               完了
+            </Button>
+            <Button color="inherit" variant="outlined" onClick={handleRenameClose}>
+              キャンセル
             </Button>
           </DialogActions>
         </form>
       </Dialog>
 
-      <Dialog open={removeOpen} onClose={handleRenameClose} maxWidth="sm" fullWidth>
+      <Dialog open={removeOpen} onClose={() => setRemoveOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
           {selected.length === 1
             ? 'このファイルを完全に削除しますか？'
@@ -233,7 +281,7 @@ export default function FileDialogs({
         >
           <Iconify icon="eva:close-outline" />
         </IconButton>
-        <form onSubmit={handleArchive}>
+        <form onSubmit={handleCompress}>
           <DialogContent>
             <TextField
               autoFocus
@@ -244,11 +292,11 @@ export default function FileDialogs({
             />
           </DialogContent>
           <DialogActions>
+            <Button color="inherit" variant="contained" type="submit">
+              実行
+            </Button>
             <Button color="inherit" variant="outlined" onClick={() => setArchiveOpen(false)}>
               キャンセル
-            </Button>
-            <Button color="inherit" variant="contained" type="submit">
-              完了
             </Button>
           </DialogActions>
         </form>
@@ -275,17 +323,17 @@ export default function FileDialogs({
               variant="outlined"
               value={mkdirValue}
               onChange={(e) => setMkdirValue(e.target.value)}
-              helperText={renameError ? 'フォルダ名を入力してください' : ''}
-              error={renameError}
+              helperText={mkdirError ? '入力してください' : ''}
+              error={mkdirError}
               placeholder="フォルダ名"
             />
           </DialogContent>
           <DialogActions>
+            <Button color="inherit" variant="contained" type="submit">
+              作成
+            </Button>
             <Button color="inherit" variant="outlined" onClick={handleMkdirClose}>
               キャンセル
-            </Button>
-            <Button color="inherit" variant="contained" type="submit">
-              完了
             </Button>
           </DialogActions>
         </form>

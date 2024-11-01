@@ -232,7 +232,7 @@ export default function ServerFiles({ server, ws }: Props) {
   const handleCompress = () => {
     handleCloseMenu();
 
-    setArchiveFileName(table.selected[0].fileName);
+    setArchiveFileName(`${table.selected[0].fileName}.zip`);
     setArchiveOpen(true);
   };
 
@@ -321,6 +321,7 @@ export default function ServerFiles({ server, ws }: Props) {
           cutFiles={cutFiles}
           handleDownload={handleDownload}
           handleCompress={handleCompress}
+          handleExtract={handleExtract}
         />
         <Scrollbar>
           <TableContainer
@@ -418,6 +419,7 @@ export default function ServerFiles({ server, ws }: Props) {
 
       <FileDialogs
         selected={table.selected}
+        resetSelected={table.resetSelected}
         ws={ws}
         handleChangePath={handleChangePath}
         directory={directory}

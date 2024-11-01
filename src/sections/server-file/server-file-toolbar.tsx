@@ -37,6 +37,7 @@ type Props = {
   cutFiles: FileManager[];
   handleDownload: () => void;
   handleCompress: () => void;
+  handleExtract: () => void;
 };
 
 export default function ServerFileToolbar({
@@ -54,6 +55,7 @@ export default function ServerFileToolbar({
   cutFiles,
   handleDownload,
   handleCompress,
+  handleExtract,
 }: Props) {
   const theme = useTheme();
   const layoutQuery: Breakpoint = 'lg';
@@ -134,7 +136,7 @@ export default function ServerFileToolbar({
         <Box display="flex" gap={0.5} height="fit-content">
           {selected.length === 1 && selected[0].type.equal(FileType.ARCHIVE) && (
             <Tooltip title="展開">
-              <IconButton color="primary" onClick={handleCompress}>
+              <IconButton color="primary" onClick={handleExtract}>
                 <Iconify icon="fluent:folder-arrow-right-16-regular" />
               </IconButton>
             </Tooltip>

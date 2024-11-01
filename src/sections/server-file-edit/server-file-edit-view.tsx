@@ -26,20 +26,23 @@ export function ServerFileEditView() {
   const [blob, setBlob] = useState<Blob>();
   const [content, setContent] = useState('');
   const [isChanged, setIsChanged] = useState(false);
+  const [isReadonly, setIsReadonly] = useState(false);
 
   const handleChange = (value: string | undefined) => {
+    if (isReadonly) return;  /* setIsReadonly(true) で changed フラグが立ってしまうので代わりにここで防ぐ */
     setIsChanged(true);
     setContent(value!);
   };
 
   const handleSave = useCallback(async () => {
     if (!file) return;
+    if (isReadonly) return;
 
     const _blob = new Blob([content], { type: blob!.type });
 
     await file.saveData(_blob);
     setIsChanged(false);
-  }, [blob, content, file]);
+  }, [blob, content, file, isReadonly]);
 
   const handleCtrlS = useCallback(
     async (e: KeyboardEvent) => {
@@ -65,7 +68,16 @@ export function ServerFileEditView() {
       const _file = fileInfo as ServerFile;
       setFile(_file);
 
-      const data = await _file.getData();
+      let data = await _file.getData();
+      if (_file.name.endsWith(".gz")) {
+        setIsReadonly(true);  /* なぜか onChange が呼ばれる */
+        try {
+          // using Compression Streams API
+          data = await (new Response(data.stream().pipeThrough(new DecompressionStream("gzip")))).blob();
+        } catch (e) {
+          console.error(e);
+        }
+      }
       setBlob(data);
 
       setContent(await data.text());
@@ -145,6 +157,9 @@ export function ServerFileEditView() {
           language={file?.type.name}
           value={content}
           onChange={handleChange}
+          options={{
+            readOnly: isReadonly,
+          }}
         />
       </Card>
     </DashboardContent>

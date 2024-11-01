@@ -1,3 +1,5 @@
+import path from "path-browserify";
+
 export default class FileType {
   public static readonly DIRECTORY = new FileType('folder', 'フォルダー', [], false);
 
@@ -72,6 +74,14 @@ export default class FileType {
     true
   );
 
+  public static readonly LOG = new FileType(
+    'log',
+    'ログファイル',
+    ['.log', '.log.gz'],
+    true,
+    (fn) => fn.endsWith('.log.gz'),
+  );
+
   public static readonly FILE = new FileType('file', 'ファイル', [''], true);
 
   public static readonly HTML = new FileType(
@@ -141,6 +151,7 @@ export default class FileType {
 
   private static readonly ALL = [
     FileType.DIRECTORY,
+    FileType.LOG,
     FileType.ARCHIVE,
     FileType.IMAGE,
     FileType.VIDEO,
@@ -166,6 +177,9 @@ export default class FileType {
     return FileType.ALL.find((type) => type.ext.includes(ext)) || FileType.UNKNOWN;
   }
 
+  static getByFilename(filename: string): FileType {
+    return FileType.ALL.find((type) => type.ext.includes(path.extname(filename)) || type.match(filename)) || FileType.UNKNOWN;
+
   equal(fileType: FileType): boolean {
     return this.name === fileType.name;
   }
@@ -174,6 +188,7 @@ export default class FileType {
     public name: string,
     public displayName: string,
     public ext: string[],
-    public isEditable: boolean
+    public isEditable: boolean,
+    public match: (filename: string) => boolean = () => false,
   ) {}
 }

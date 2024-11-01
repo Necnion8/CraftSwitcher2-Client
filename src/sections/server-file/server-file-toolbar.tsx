@@ -7,6 +7,7 @@ import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Toolbar from '@mui/material/Toolbar';
 import Tooltip from '@mui/material/Tooltip';
+import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
@@ -14,6 +15,7 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import InputAdornment from '@mui/material/InputAdornment';
 import { useTheme, type Breakpoint } from '@mui/material/styles';
 
+import FileType from 'src/abc/file-type';
 import { ServerFile } from 'src/api/file-manager';
 
 import { Iconify } from 'src/components/iconify';
@@ -54,8 +56,8 @@ export default function ServerFileToolbar({
   const theme = useTheme();
   const layoutQuery: Breakpoint = 'lg';
 
-  const path = directory?.path || '';
-  const location = directory?.location || '';
+  const path = directory?.src || '';
+  const location = directory?.path || '';
   const pathSegments = path.split('/');
 
   return (
@@ -127,14 +129,35 @@ export default function ServerFileToolbar({
         sx={{ [theme.breakpoints.down(layoutQuery)]: { width: '100%' } }}
       >
         <Box display="flex" gap={0.5}>
+          {selected.length === 1 && selected[0].type.equal(FileType.ARCHIVE) && (
+            <>
+              <Tooltip title="展開">
+                <IconButton color="primary">
+                  <Iconify icon="solar:archive-up-linear" />
+                </IconButton>
+              </Tooltip>
+              <Divider orientation="vertical" variant="middle" flexItem />
+            </>
+          )}
+          {selected.length === 1 && selected[0].type.isEditable && (
+            <>
+              <Tooltip title="編集">
+                <IconButton color="primary">
+                  <Iconify icon="solar:pen-new-square-linear" />
+                </IconButton>
+              </Tooltip>
+              <Divider orientation="vertical" variant="middle" flexItem />
+            </>
+          )}
+
           <Tooltip title="コピー">
             <IconButton color="primary" disabled={!selected.length} onClick={handleSetCopyFiles}>
-              <Iconify icon="solar:copy-bold" />
+              <Iconify icon="solar:copy-linear" />
             </IconButton>
           </Tooltip>
           <Tooltip title="カット">
             <IconButton color="primary" disabled={!selected.length} onClick={handleSetCutFiles}>
-              <Iconify icon="solar:scissors-bold" />
+              <Iconify icon="solar:scissors-linear" />
             </IconButton>
           </Tooltip>
           <Tooltip title="ペースト">
@@ -143,7 +166,7 @@ export default function ServerFileToolbar({
               disabled={!(copyFiles.length || cutFiles.length)}
               onClick={handlePaste}
             >
-              <Iconify icon="solar:clipboard-bold" />
+              <Iconify icon="solar:clipboard-linear" />
             </IconButton>
           </Tooltip>
           <Tooltip title="名前を変更">
@@ -161,7 +184,7 @@ export default function ServerFileToolbar({
               disabled={!(selected.length === 1 && selected[0] instanceof ServerFile)}
               onClick={handleDownload}
             >
-              <Iconify icon="solar:download-bold" />
+              <Iconify icon="solar:download-linear" />
             </IconButton>
           </Tooltip>
           <Tooltip title="削除">
@@ -170,7 +193,7 @@ export default function ServerFileToolbar({
               disabled={!selected.length}
               onClick={() => setRemoveOpen(true)}
             >
-              <Iconify icon="solar:trash-bin-trash-bold" />
+              <Iconify icon="solar:trash-bin-trash-linear" />
             </IconButton>
           </Tooltip>
         </Box>

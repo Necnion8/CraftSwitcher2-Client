@@ -14,7 +14,7 @@ export class ServerFileList extends Array<FileManager> {
       path: _path,
       files_root: filesRoot,
     });
-    this.forEach((f) => params.append('include_files', f.path));
+    this.forEach((f) => params.append('include_files', f.src));
 
     const result = await axios.post(
       `/server/${this[0].serverId}/file/archive/make?${params.toString()}`
@@ -25,26 +25,30 @@ export class ServerFileList extends Array<FileManager> {
 }
 
 export class FileManager {
-  public _path: string;
+  public src: string;
 
   constructor(
     public name: string,
-    public location: string,
+    public _path: string,
     public modifyAt: Date | undefined,
     public createAt: Date | undefined,
     public size: number,
     public type: FileType,
     public serverId: string
   ) {
-    this._path = path.join(location, name);
+    this.src = path.join(_path, name);
   }
 
   get path(): string {
     return this._path;
   }
 
+  get fileName(): string {
+    return path.parse(this.name).name;
+  }
+
   async copy(to: string): Promise<boolean> {
-    if (to === this.location) {
+    if (to === this.path) {
       const ext = path.extname(this.name);
       let dstPath = path.join(to, `${path.basename(this.name, ext)} - コピー${ext}`);
       let count = 1;
@@ -54,7 +58,7 @@ export class FileManager {
         try {
           // eslint-disable-next-line no-await-in-loop
           const result = await axios.put(
-            `/server/${this.serverId}/file/copy?path=${this.path}&dst_path=${dstPath}`
+            `/server/${this.serverId}/file/copy?path=${this.src}&dst_path=${dstPath}`
           );
 
           return result.status === 200;
@@ -72,7 +76,7 @@ export class FileManager {
     const dstPath = path.join(to, this.name);
 
     const result = await axios.put(
-      `/server/${this.serverId}/file/copy?path=${this.path}&dst_path=${dstPath}`
+      `/server/${this.serverId}/file/copy?path=${this.src}&dst_path=${dstPath}`
     );
 
     return result.status === 200;
@@ -82,24 +86,24 @@ export class FileManager {
     const dstPath = path.join(to, this.name);
 
     const result = await axios.put(
-      `/server/${this.serverId}/file/move?path=${this.path}&dst_path=${dstPath}`
+      `/server/${this.serverId}/file/move?path=${this.src}&dst_path=${dstPath}`
     );
 
     return result.status === 200 ? result.data.task_id : false;
   }
 
   async rename(newName: string): Promise<number | false> {
-    const newPath = path.join(this.location, newName);
+    const newPath = path.join(this.path, newName);
 
     const result = await axios.put(
-      `/server/${this.serverId}/file/move?path=${this.path}&dst_path=${newPath}`
+      `/server/${this.serverId}/file/move?path=${this.src}&dst_path=${newPath}`
     );
 
     return result.status === 200 ? result.data.task_id : false;
   }
 
   async remove(): Promise<number | false> {
-    const result = await axios.delete(`/server/${this.serverId}/file?path=${this.path}`);
+    const result = await axios.delete(`/server/${this.serverId}/file?path=${this.src}`);
     return result.status === 200 ? result.data.task_id : false;
   }
 
@@ -145,7 +149,7 @@ export class FileManager {
     if (!this.type.equal(FileType.ARCHIVE)) return false;
 
     const result = await axios.post(
-      `/server/${this.serverId}/file/archive/extract?path=${this.path}&output_dir=${outputDir}`,
+      `/server/${this.serverId}/file/archive/extract?path=${this.src}&output_dir=${outputDir}`,
       {
         password,
       }
@@ -191,7 +195,7 @@ export class ServerDirectory extends FileManager {
   constructor(
     serverId: string,
     name: string,
-    location: string,
+    _path: string,
     modifyAt: Date | undefined = undefined,
     createdAt: Date | undefined = undefined,
     public isServerDir: boolean | undefined = undefined,
@@ -199,19 +203,19 @@ export class ServerDirectory extends FileManager {
 
     private _children: ServerFileList | undefined = undefined
   ) {
-    super(name, location, modifyAt, createdAt, -1, FileType.DIRECTORY, serverId);
+    super(name, _path, modifyAt, createdAt, -1, FileType.DIRECTORY, serverId);
   }
 
   async children(): Promise<ServerFileList> {
     if (!this._children) {
-      this._children = (await FileManager.get(super.serverId, this.path))._children!;
+      this._children = (await FileManager.get(super.serverId, this.src))._children!;
     }
     return this._children;
   }
 
   async mkdir(name: string): Promise<number | false> {
     const result = await axios.post(
-      `/server/${this.serverId}/file/mkdir?path=${path.join(this.path, name)}`
+      `/server/${this.serverId}/file/mkdir?path=${path.join(this.src, name)}`
     );
     return result.status === 200 ? result.data.task_id : false;
   }
@@ -220,7 +224,7 @@ export class ServerDirectory extends FileManager {
     const formData = new FormData();
     formData.append('file', file);
 
-    const filePath = path.join(this.path, file.name);
+    const filePath = path.join(this.src, file.name);
 
     const result = await axios.post(`/server/${this.serverId}/file?path=${filePath}`, formData);
     return result.status === 200 ? result.data.task_id : false;
@@ -233,16 +237,16 @@ export class ServerFile extends FileManager {
   constructor(
     serverId: string,
     name: string,
-    location: string,
+    _path: string,
     modifyAt: Date | undefined = undefined,
     createdAt: Date | undefined = undefined,
     size = -1
   ) {
-    super(name, location, modifyAt, createdAt, size, FileType.get(path.extname(name)), serverId);
+    super(name, _path, modifyAt, createdAt, size, FileType.get(path.extname(name)), serverId);
   }
 
   async getData(): Promise<Blob> {
-    const result = await axios.get(`/server/${this.serverId}/file?path=${this.path}`, {
+    const result = await axios.get(`/server/${this.serverId}/file?path=${this.src}`, {
       responseType: 'blob',
     });
     return result.data;
@@ -252,11 +256,7 @@ export class ServerFile extends FileManager {
     const formData = new FormData();
     formData.append('file', data);
 
-    await axios.post(`/server/${this.serverId}/file?path=${this.path}`, formData);
-  }
-
-  get fileName(): string {
-    return path.parse(this.name).name;
+    await axios.post(`/server/${this.serverId}/file?path=${this.src}`, formData);
   }
 
   get extName(): string {

@@ -86,7 +86,7 @@ export function ServerFileEditView() {
           color="inherit"
           startIcon={<Iconify icon="eva:arrow-ios-back-fill" />}
           component={Link}
-          to={`../?path=${file?.location}`}
+          to={`../?path=${file?.path}`}
         >
           戻る
         </Button>
@@ -113,7 +113,7 @@ export function ServerFileEditView() {
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <Iconify width={16} icon="eva:home-outline" />
               </Box>
-              {file?.location.split('/').map((name, index) => {
+              {file?.path.split('/').map((name, index) => {
                 if (name === '') return null;
                 return (
                   <Typography fontSize={12} key={index}>

@@ -45,7 +45,7 @@ export default function ServerFileTableRow({
 
   const handleDoubleClick = async () => {
     if (file.type.isEditable) {
-      router.push(`edit?path=${file.path}`);
+      router.push(`edit?path=${file.src}`);
     } else {
       const fileData = await file.getData();
 

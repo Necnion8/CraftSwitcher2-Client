@@ -62,7 +62,7 @@ export default function FileDialogs({
 
     ws?.addEventListener('FileTaskEnd', (fileTaskEvent) => {
       if (fileTaskEvent.taskId === taskId) {
-        handleChangePath(directory?.path!!);
+        handleChangePath(directory?.src!!);
       }
     });
   };
@@ -75,8 +75,8 @@ export default function FileDialogs({
       file.remove();
 
       ws?.addEventListener('FileTaskEnd', (fileTaskEvent) => {
-        if (fileTaskEvent.src === file.path) {
-          handleChangePath(directory?.path!);
+        if (fileTaskEvent.src === file.src) {
+          handleChangePath(directory?.src!);
         }
       });
     });
@@ -86,7 +86,7 @@ export default function FileDialogs({
     e.preventDefault();
     const archiveFiles = new ServerFileList(...selected);
 
-    archiveFiles.archive(archiveFileName, directory?.path!, directory?.path!);
+    archiveFiles.archive(archiveFileName, directory?.src!, directory?.src!);
   };
 
   return (

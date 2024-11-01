@@ -74,19 +74,6 @@ export default function ServerFiles({ server, ws }: Props) {
     filterName,
   });
 
-  useEffect(() => {
-    if (!params.has('path')) {
-      setParams((prev) => {
-        prev.set('path', '/');
-        return prev;
-      });
-    }
-
-    reloadFiles();
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params, server]);
-
   const reloadFiles = useCallback(async () => {
     setIsInValidPath(false);
     try {
@@ -101,13 +88,13 @@ export default function ServerFiles({ server, ws }: Props) {
         setIsInValidPath(true);
         return;
       }
-      console.error(e);
+      throw e;
     }
   }, [params, server]);
 
   const handleChangePath = useCallback(
     (path: string) => {
-      if (path === directory?.path) reloadFiles();
+      if (path === directory?.src) reloadFiles();
 
       table.resetSelected();
       setParams((prev) => {
@@ -115,7 +102,7 @@ export default function ServerFiles({ server, ws }: Props) {
         return prev;
       });
     },
-    [directory?.path, reloadFiles, setParams, table]
+    [directory?.src, reloadFiles, setParams, table]
   );
 
   const onContextMenu = (
@@ -165,14 +152,14 @@ export default function ServerFiles({ server, ws }: Props) {
       // TODO: エラーハンドリング
       copyFiles.forEach((file) => {
         try {
-          file.copy(directory?.path!);
+          file.copy(directory?.src!);
         } catch (e) {
           console.log(e);
         }
 
         ws?.addEventListener('FileTaskEnd', (e) => {
-          if (e.src === file.path) {
-            handleChangePath(directory?.path!);
+          if (e.src === file.src) {
+            handleChangePath(directory?.src!);
           }
         });
       });
@@ -180,13 +167,13 @@ export default function ServerFiles({ server, ws }: Props) {
     if (cutFiles.length) {
       cutFiles.forEach((file) => {
         try {
-          file.move(directory?.path!);
+          file.move(directory?.src!);
         } catch (e) {
           console.log(e);
         }
         ws?.addEventListener('FileTaskEnd', (e) => {
-          if (e.src === file.path) {
-            handleChangePath(directory?.path!);
+          if (e.src === file.src) {
+            handleChangePath(directory?.src!);
           }
         });
       });
@@ -205,10 +192,12 @@ export default function ServerFiles({ server, ws }: Props) {
     link.click();
   }, [table.selected]);
 
-  const handleCompress = useCallback(async () => {
+  const handleCompress = () => {
     handleCloseMenu();
+
+    setArchiveFileName(table.selected[0].fileName);
     setArchiveOpen(true);
-  }, []);
+  };
 
   const handleExtract = useCallback(async () => {
     handleCloseMenu();
@@ -291,6 +280,17 @@ export default function ServerFiles({ server, ws }: Props) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
+  useEffect(() => {
+    if (!params.has('path')) {
+      setParams((prev) => {
+        prev.set('path', '/');
+        return prev;
+      });
+    }
+
+    reloadFiles();
+  }, [params, reloadFiles, server, setParams]);
+
   return (
     <>
       <Stack
@@ -348,13 +348,13 @@ export default function ServerFiles({ server, ws }: Props) {
               />
               <TableBody>
                 {filteredFiles.map((file) => {
-                  const { path } = file;
+                  const { src } = file;
                   if (file instanceof ServerDirectory) {
                     return (
                       <ServerFolderTableRow
-                        key={path}
+                        key={src}
                         folder={file}
-                        path={path}
+                        path={src}
                         selected={table.selected.includes(file)}
                         isCutFileSelected={cutFiles.includes(file)}
                         onDoubleClick={handleChangePath}
@@ -366,7 +366,7 @@ export default function ServerFiles({ server, ws }: Props) {
                   if (file instanceof ServerFile) {
                     return (
                       <ServerFileTableRow
-                        key={path}
+                        key={src}
                         file={file}
                         selected={table.selected.includes(file)}
                         isCutFileSelected={cutFiles.includes(file)}

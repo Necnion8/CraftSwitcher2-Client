@@ -1,3 +1,5 @@
+import type WebSocketClient from 'src/api/ws-client';
+import type { FileTaskEvent } from 'src/api/ws-client';
 import type { FileManager, ServerDirectory } from 'src/api/file-manager';
 
 import React, { type FormEvent } from 'react';
@@ -7,14 +9,12 @@ import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import { Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
+import { Dialog, DialogTitle, DialogActions, DialogContent } from '@mui/material';
 
 import { fDateTime } from 'src/utils/format-time';
 
 import FileType from 'src/abc/file-type';
 import { ServerFileList } from 'src/api/file-manager';
-import type { FileTaskEvent } from 'src/api/ws-client';
-import type WebSocketClient from 'src/api/ws-client';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -104,7 +104,7 @@ export default function FileDialogs({
     const { length } = selected;
     if (!length) return;
     setRemoveOpen(false);
-    resetSelected();
+    setTimeout(resetSelected, 200);
 
     let error = 0;
     let done = 0;

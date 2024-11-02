@@ -1,4 +1,6 @@
 import type Server from 'src/api/server';
+import type WebSocketClient from 'src/api/ws-client';
+import type { FileTaskEvent } from 'src/api/ws-client';
 import type { FileManager } from 'src/api/file-manager';
 
 import { useSearchParams } from 'react-router-dom';
@@ -9,7 +11,6 @@ import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableContainer from '@mui/material/TableContainer';
 
-import WebSocketClient, { FileTaskEvent } from 'src/api/ws-client';
 import { ServerFile, ServerFileList, ServerDirectory } from 'src/api/file-manager';
 
 import { Scrollbar } from 'src/components/scrollbar';
@@ -160,8 +161,9 @@ export default function ServerFiles({ server, ws }: Props) {
     setRenameOpen(true);
   };
 
-  const handlMkdirDialogOpen = () => {
+  const handleMkdirDialogOpen = () => {
     handleCloseMenu();
+    setMkdirValue('');
     setMkdirOpen(true);
   };
 
@@ -195,14 +197,11 @@ export default function ServerFiles({ server, ws }: Props) {
             const res = await file.copy(directory?.src!);
             if (!res) error += 1;
           } catch (e) {
-            console.log(e);
+            console.error(e);
           }
           const fileTaskEndEvent = (e: FileTaskEvent) => {
             if (e.src === file.src) {
-              if (e.result !== 'success') {
-                error += 1;
-                return;
-              }
+              if (e.result !== 'success') error += 1;
               done += 1;
               ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
             }
@@ -215,17 +214,18 @@ export default function ServerFiles({ server, ws }: Props) {
         /* empty */
       }
       // TODO: エラーハンドリング
-      let i = 1;
+      let i = 0;
       const checkDone = () => {
         if (done === length || i > 40) {
           reloadFiles();
           clearInterval(interval);
+          return;
         }
-
         i += 1;
       };
       const interval = setInterval(checkDone, 500);
     }
+
     if (cutFiles.length) {
       const { length } = cutFiles;
       let error = 0;
@@ -240,10 +240,7 @@ export default function ServerFiles({ server, ws }: Props) {
           }
           const fileTaskEndEvent = (e: FileTaskEvent) => {
             if (e.src === file.src) {
-              if (e.result !== 'success') {
-                error += 1;
-                return;
-              }
+              if (e.result !== 'success') error += 1;
               done += 1;
               ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
             }
@@ -374,7 +371,7 @@ export default function ServerFiles({ server, ws }: Props) {
           handleDownload={handleDownload}
           handleCompress={handleCompress}
           handleExtract={handleExtract}
-          handlMkdirDialogOpen={handlMkdirDialogOpen}
+          handlMkdirDialogOpen={handleMkdirDialogOpen}
         />
         <Scrollbar>
           <TableContainer
@@ -467,7 +464,7 @@ export default function ServerFiles({ server, ws }: Props) {
         setRemoveOpen={setRemoveOpen}
         existsMoveFile={copyFiles.length > 0 || cutFiles.length > 0}
         handlePaste={handlePaste}
-        handlMkdirDialogOpen={handlMkdirDialogOpen}
+        handlMkdirDialogOpen={handleMkdirDialogOpen}
       />
 
       <FileDialogs

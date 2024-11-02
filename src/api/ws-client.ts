@@ -14,7 +14,6 @@ export default class WebSocketClient {
   private events = new Map<any, ((e: any) => void)[]>();
 
   constructor() {
-    console.log('WebSocketClient constructor');
     this.ws = new WebSocket(`${axios.defaults.baseURL || ''}/ws`);
     this.ws.onmessage = this.onMessage.bind(this);
   }
@@ -81,6 +80,7 @@ export default class WebSocketClient {
 
           case 'file_task_end': {
             const { task } = data;
+            console.log(task);
             const ev = new FileTaskEvent(
               task.dst,
               task.id,

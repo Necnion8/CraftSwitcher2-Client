@@ -7,6 +7,12 @@ import FileType from 'src/abc/file-type';
 // ----------------------------------------------------------------------
 
 export class ServerFileList extends Array<FileManager> {
+  /**
+   * ファイルまたはフォルダーのアーカイブファイルを作成します
+   * @param name アーカイブファイル名
+   * @param location 保存先のパス
+   * @param filesRoot 格納するファイルのルートパス
+   */
   async archive(name: string, location: string, filesRoot: string): Promise<number | false> {
     const _path: string = path.join(location, name);
 
@@ -19,8 +25,13 @@ export class ServerFileList extends Array<FileManager> {
     const result = await axios.post(
       `/server/${this[0].serverId}/file/archive/make?${params.toString()}`
     );
+    const { data }: { data: TaskResult } = result;
 
-    return result.status === 200 ? result.data.task_id : false;
+    return data.result === 'success'
+      ? true
+      : data.result === 'pending'
+        ? result.data.task_id
+        : false;
   }
 }
 
@@ -47,6 +58,11 @@ export class FileManager {
     return path.parse(this.name).name;
   }
 
+  /**
+   * フォルダーまたはファイルをコピーします
+   * @param to コピー先のパス
+   * @returns コピーに成功した場合はtrue、実行中の場合はタスクID、失敗した場合はfalse
+   */
   async copy(to: string): Promise<boolean> {
     if (to === this.path) {
       const ext = path.extname(this.name);
@@ -60,8 +76,13 @@ export class FileManager {
           const result = await axios.put(
             `/server/${this.serverId}/file/copy?path=${this.src}&dst_path=${dstPath}`
           );
+          const { data }: { data: TaskResult } = result;
 
-          return result.status === 200;
+          return data.result === 'success'
+            ? true
+            : data.result === 'pending'
+              ? result.data.task_id
+              : false;
         } catch (e) {
           if (e.response.data?.error_code === 301) {
             count += 1;
@@ -82,31 +103,67 @@ export class FileManager {
     return result.status === 200;
   }
 
+  /**
+   * フォルダーまたはファイルを移動します
+   * @param to 移動先のパス
+   * @returns 移動に成功した場合はtrue、実行中の場合はタスクID、失敗した場合はfalse
+   */
   async move(to: string): Promise<number | false> {
     const dstPath = path.join(to, this.name);
 
     const result = await axios.put(
       `/server/${this.serverId}/file/move?path=${this.src}&dst_path=${dstPath}`
     );
+    const { data }: { data: TaskResult } = result;
 
-    return result.status === 200 ? result.data.task_id : false;
+    return data.result === 'success'
+      ? true
+      : data.result === 'pending'
+        ? result.data.task_id
+        : false;
   }
 
+  /**
+   * フォルダーまたはファイルの名前を変更します
+   * @param newName 新しい名前
+   * @returns 名前の変更に成功した場合はtrue、実行中の場合はタスクID、失敗した場合はfalse
+   */
   async rename(newName: string): Promise<number | false> {
     const newPath = path.join(this.path, newName);
 
     const result = await axios.put(
       `/server/${this.serverId}/file/move?path=${this.src}&dst_path=${newPath}`
     );
+    const { data }: { data: TaskResult } = result;
 
-    return result.status === 200 ? result.data.task_id : false;
+    return data.result === 'success'
+      ? true
+      : data.result === 'pending'
+        ? result.data.task_id
+        : false;
   }
 
-  async remove(): Promise<number | false> {
+  /**
+   * フォルダーまたはファイルを削除します
+   * @returns 削除に成功した場合はtrue、実行中の場合はタスクID、失敗した場合はfalse
+   */
+  async remove(): Promise<boolean | number> {
     const result = await axios.delete(`/server/${this.serverId}/file?path=${this.src}`);
-    return result.status === 200 ? result.data.task_id : false;
+    const { data }: { data: TaskResult } = result;
+
+    return data.result === 'success'
+      ? true
+      : data.result === 'pending'
+        ? result.data.task_id
+        : false;
   }
 
+  /**
+   * 指定されたパスのファイルを取得します
+   * @param serverId サーバーID
+   * @param _path ファイルのパス
+   * @returns ファイルまたはフォルダーのリスト
+   */
   static async get(serverId: string, _path: string): Promise<ServerDirectory> {
     const result = await axios.get(`/server/${serverId}/files?path=${_path}`);
     const directory: FilesResult = result.data;
@@ -145,7 +202,13 @@ export class FileManager {
     );
   }
 
-  async extract(outputDir: string, password?: string) {
+  /**
+   * フォルダーまたはファイルを圧縮します
+   * @param outputDir 出力先のパス
+   * @param password パスワード
+   * @returns 圧縮に成功した場合はtrue、実行中の場合はタスクID、失敗した場合はfalse
+   */
+  async extract(outputDir: string, password?: string): Promise<number | false> {
     if (!this.type.equal(FileType.ARCHIVE)) return false;
 
     const result = await axios.post(
@@ -154,9 +217,21 @@ export class FileManager {
         password,
       }
     );
-    return result.data;
+    const { data }: { data: TaskResult } = result;
+
+    return data.result === 'success'
+      ? true
+      : data.result === 'pending'
+        ? result.data.task_id
+        : false;
   }
 
+  /**
+   * フォルダーまたはファイルの情報を取得します
+   * @param serverId サーバーID
+   * @param _path ファイルのパス
+   * @returns ファイルまたはフォルダーの情報
+   */
   static async getInfo(serverId: string, _path: string): Promise<ServerFile | ServerDirectory> {
     const result = await axios.get(`/server/${serverId}/file/info?path=${_path}`);
     const file: FileInfoResult = result.data;
@@ -183,7 +258,11 @@ export class FileManager {
     );
   }
 
-  static async getTasks(): Promise<TaskResult[]> {
+  /**
+   * 実行されているタスクのリストを取得します
+   * @returns タスクのリスト
+   */
+  static async getTasks(): Promise<TasksResult[]> {
     const result = await axios.get('/file/tasks');
     return result.data;
   }
@@ -213,11 +292,22 @@ export class ServerDirectory extends FileManager {
     return this._children;
   }
 
+  /**
+   * フォルダを作成します
+   * @param name 作成するフォルダ名
+   * @returns 作成に成功した場合はtrue、実行中の場合はタスクID、失敗した場合はfalse
+   */
   async mkdir(name: string): Promise<number | false> {
     const result = await axios.post(
       `/server/${this.serverId}/file/mkdir?path=${path.join(this.src, name)}`
     );
-    return result.status === 200 ? result.data.task_id : false;
+    const { data }: { data: TaskResult } = result;
+
+    return data.result === 'success'
+      ? true
+      : data.result === 'pending'
+        ? result.data.task_id
+        : false;
   }
 
   async uploadFile(file: File): Promise<number | false> {
@@ -264,7 +354,7 @@ export class ServerFile extends FileManager {
   }
 }
 
-type TaskResult = {
+type TasksResult = {
   id: number;
   type: string;
   progress: number;
@@ -272,6 +362,21 @@ type TaskResult = {
   src: string;
   dst: string;
   server: string;
+};
+
+type TaskResult = {
+  result: 'success' | 'failed' | 'pending';
+  task_id: number;
+  file: {
+    name: string;
+    path: string;
+    is_dir: string;
+    size: number;
+    modify_time: number;
+    create_time: number;
+    is_server_dir: string;
+    registered_server_id: string | null;
+  };
 };
 
 type FilesResult = {

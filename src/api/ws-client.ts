@@ -2,6 +2,7 @@
 import ServerState from 'src/abc/server-state';
 
 import Server from './server';
+import axios from 'axios';
 
 // ----------------------------------------------------------------------
 
@@ -13,7 +14,7 @@ export default class WebSocketClient {
 
   constructor() {
     console.log('WebSocketClient constructor');
-    this.ws = new WebSocket('ws://localhost:8080/api/ws');
+    this.ws = new WebSocket(`${axios.defaults.baseURL || ""}/ws`);
     this.ws.onmessage = this.onMessage.bind(this);
   }
 

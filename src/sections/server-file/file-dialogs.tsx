@@ -154,7 +154,11 @@ export default function FileDialogs({
 
     const archiveFiles = new ServerFileList(...selected);
 
-    const res = await archiveFiles.archive(archiveFileName, directory?.src!, directory?.src!);
+    const res = await archiveFiles.createArchiveFile(
+      archiveFileName,
+      directory?.src!,
+      directory?.src!
+    );
     setArchiveOpen(false);
 
     const fileTaskEndEvent = (fileTaskEvent: FileTaskEvent) => {

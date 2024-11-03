@@ -14,12 +14,10 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
-import { emptyRows } from '../../server/utils';
 import { UserTableRow } from '../user-table-row';
 import { UserTableHead } from '../user-table-head';
 import { UserCreateDialog } from '../user-create-dialog';
 import { TableLoading } from '../../server/table-loading';
-import { TableEmptyRows } from '../../server/table-empty-rows';
 
 export function UserView() {
   const table = useTable();
@@ -89,11 +87,6 @@ export function UserView() {
                     reloadUsers={reloadUsers}
                   />
                 ))}
-
-                <TableEmptyRows
-                  height={68}
-                  emptyRows={emptyRows(table.page, table.rowsPerPage, users.length)}
-                />
                 {isLoading && <TableLoading unableToLoad={unableToLoad} />}
               </TableBody>
             </Table>

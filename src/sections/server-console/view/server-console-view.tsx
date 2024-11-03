@@ -76,7 +76,7 @@ export function ServerConsoleView() {
               fontSize="small"
               sx={{ width: 'fit-content' }}
               component={RouterLink}
-              href="/server"
+              href="../"
             >
               サーバー
             </Link>

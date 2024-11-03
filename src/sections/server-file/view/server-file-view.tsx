@@ -76,7 +76,7 @@ export function ServerFileView() {
               fontSize="small"
               sx={{ width: 'fit-content' }}
               component={RouterLink}
-              href="/server"
+              href="../"
             >
               サーバー
             </Link>

@@ -93,7 +93,7 @@ export function ServerSummaryView() {
             color="inherit"
             fontSize="small"
             component={RouterLink}
-            href="/server"
+            href="../"
             sx={{ width: 'fit-content' }}
           >
             サーバー

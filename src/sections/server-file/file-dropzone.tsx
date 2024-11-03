@@ -15,28 +15,36 @@ type Props = {
   isActive: boolean;
   setIsActive: React.Dispatch<React.SetStateAction<boolean>>;
   directory: ServerDirectory | null;
+  reloadFiles: () => void;
 };
 
-export default function FileDropZone({ isActive, setIsActive, directory }: Props) {
+export default function FileDropZone({ isActive, setIsActive, directory, reloadFiles }: Props) {
   const onDragLeave = useCallback(() => {
     setIsActive(false);
   }, [setIsActive]);
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
+      let error = 0;
       acceptedFiles.forEach((file) => {
-        directory?.uploadFile(file);
+        const res = directory?.uploadFile(file);
+        if (!res) error += 1;
       });
 
+      if (error) {
+        // TODO: エラーハンドリング
+      }
+
       setIsActive(false);
+      reloadFiles();
     },
-    [directory, setIsActive]
+    [directory, setIsActive, reloadFiles]
   );
 
   const { getRootProps, getInputProps } = useDropzone({ onDrop, onDragLeave });
 
   return (
-    <Fade in={isActive}>
+    <Fade in={isActive} timeout={20}>
       <Box
         {...getRootProps()}
         sx={(theme) => ({

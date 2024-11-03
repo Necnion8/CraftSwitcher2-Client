@@ -435,7 +435,12 @@ export default function ServerFiles({ server, ws }: Props) {
             </Table>
           </TableContainer>
         </Scrollbar>
-        <FileDropZone isActive={isDragActive} setIsActive={setIsDragActive} directory={directory} />
+        <FileDropZone
+          isActive={isDragActive}
+          setIsActive={setIsDragActive}
+          directory={directory}
+          reloadFiles={reloadFiles}
+        />
       </Stack>
 
       <ServerFileContextMenu

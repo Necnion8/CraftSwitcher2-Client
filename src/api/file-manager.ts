@@ -311,14 +311,14 @@ export class ServerDirectory extends FileManager {
     return data.result === 'success';
   }
 
-  async uploadFile(file: File): Promise<number | boolean> {
+  async uploadFile(file: File): Promise<boolean> {
     const formData = new FormData();
     formData.append('file', file);
 
     const filePath = path.join(this.src, file.name);
 
     const result = await axios.post(`/server/${this.serverId}/file?path=${filePath}`, formData);
-    return result.status === 200 ? result.data.task_id : false;
+    return result.status === 200;
   }
 }
 

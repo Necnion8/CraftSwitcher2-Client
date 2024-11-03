@@ -109,8 +109,10 @@ export function ServerCreateView() {
                   onClick={() => setPage(1)}
                   sx={{ width: '50%', display: 'block' }}
                 >
-                  <Iconify icon="mingcute:add-circle-line" width="60%" color="grey.600" />
-                  <Typography variant="h5">新しく作成</Typography>
+                  <Iconify icon="fluent:add-32-light" width="60%" color="grey.600" />
+                  <Typography variant="h5" mt={2}>
+                    新しく作成
+                  </Typography>
                 </Button>
                 <Button
                   color="inherit"
@@ -118,8 +120,10 @@ export function ServerCreateView() {
                   onClick={() => setPage(2)}
                   sx={{ width: '50%', display: 'block' }}
                 >
-                  <Iconify icon="mingcute:download-2-line" width="60%" color="grey.600" />
-                  <Typography variant="h5">構築済みサーバーを追加</Typography>
+                  <Iconify icon="fluent:arrow-download-32-light" width="60%" color="grey.600" />
+                  <Typography variant="h5" mt={5}>
+                    構築済みサーバーを追加
+                  </Typography>
                 </Button>
               </Stack>
             ) : page === 1 ? (

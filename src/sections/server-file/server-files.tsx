@@ -1,6 +1,6 @@
 import type Server from 'src/api/server';
 import type { FileManager } from 'src/api/file-manager';
-import type { FileTaskEvent, WebSocketClient } from 'src/websocket/client';
+import type { FileTaskEvent, WebSocketClient } from 'src/websocket';
 
 import { useSearchParams } from 'react-router-dom';
 import React, { useState, useEffect, useCallback } from 'react';

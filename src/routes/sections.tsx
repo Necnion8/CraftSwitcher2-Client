@@ -17,6 +17,7 @@ export const ServerConsolePage = lazy(() => import('src/pages/server-console'));
 export const ServerFilePage = lazy(() => import('src/pages/server-file'));
 export const ServerFileEditPage = lazy(() => import('src/pages/server-file-edit'));
 export const ServerCreatePage = lazy(() => import('src/pages/server-create'));
+export const UserPage = lazy(() => import('src/pages/user'));
 export const LoginPage = lazy(() => import('src/pages/login'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
 
@@ -67,6 +68,10 @@ export function Router() {
               ],
             },
           ],
+        },
+        {
+          path: 'user',
+          element: <UserPage />,
         },
       ],
     },

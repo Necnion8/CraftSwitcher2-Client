@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import React, { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -18,6 +17,7 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { emptyRows } from '../../server/utils';
 import { UserTableRow } from '../user-table-row';
 import { UserTableHead } from '../user-table-head';
+import { UserCreateDialog } from '../user-create-dialog';
 import { TableLoading } from '../../server/table-loading';
 import { TableEmptyRows } from '../../server/table-empty-rows';
 
@@ -28,17 +28,21 @@ export function UserView() {
   const [isLoading, setIsLoading] = useState(true);
   const [unableToLoad, setUnableToLoad] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const result = await User.all();
-        setIsLoading(false);
-        setUsers(result);
-      } catch (e) {
-        setUnableToLoad(true);
-      }
-    })();
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+
+  const reloadUsers = useCallback(async () => {
+    try {
+      const result = await User.all();
+      setIsLoading(false);
+      setUsers(result);
+    } catch (e) {
+      setUnableToLoad(true);
+    }
   }, []);
+
+  useEffect(() => {
+    reloadUsers();
+  }, [reloadUsers]);
 
   return (
     <DashboardContent>
@@ -50,10 +54,9 @@ export function UserView() {
           variant="contained"
           color="inherit"
           startIcon={<Iconify icon="mingcute:add-line" />}
-          component={Link}
-          to="./create"
+          onClick={() => setCreateDialogOpen(true)}
         >
-          新規作成
+          追加
         </Button>
       </Box>
 
@@ -83,6 +86,7 @@ export function UserView() {
                     user={u}
                     selected={table.selected.includes(u)}
                     onSelectRow={() => table.onSelectRow(u)}
+                    reloadUsers={reloadUsers}
                   />
                 ))}
 
@@ -96,11 +100,16 @@ export function UserView() {
           </TableContainer>
         </Scrollbar>
       </Card>
+      <UserCreateDialog
+        open={createDialogOpen}
+        setOpen={setCreateDialogOpen}
+        reloadUsers={reloadUsers}
+      />
     </DashboardContent>
   );
 }
 
-export function useTable() {
+function useTable() {
   const [page, setPage] = useState(0);
   const [orderBy, setOrderBy] = useState('name');
   const [rowsPerPage, setRowsPerPage] = useState(5);

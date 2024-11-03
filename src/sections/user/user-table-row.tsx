@@ -1,9 +1,11 @@
 import type User from 'src/api/user';
+import type { FormEvent } from 'react';
 
 import React, { useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Avatar from '@mui/material/Avatar';
+import Button from '@mui/material/Button';
 import Popover from '@mui/material/Popover';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
@@ -11,6 +13,7 @@ import MenuList from '@mui/material/MenuList';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import { Dialog, DialogTitle, DialogActions } from '@mui/material';
 import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 
 import { fDateTime } from 'src/utils/format-time';
@@ -23,10 +26,12 @@ type UserTableRowProps = {
   user: User;
   selected: boolean;
   onSelectRow: () => void;
+  reloadUsers: () => void;
 };
 
-export function UserTableRow({ user, selected, onSelectRow }: UserTableRowProps) {
+export function UserTableRow({ user, selected, onSelectRow, reloadUsers }: UserTableRowProps) {
   const [openPopover, setOpenPopover] = useState<HTMLButtonElement | null>(null);
+  const [removeOpen, setRemoveOpen] = useState(false);
 
   const handleOpenPopover = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
     setOpenPopover(event.currentTarget);
@@ -35,6 +40,21 @@ export function UserTableRow({ user, selected, onSelectRow }: UserTableRowProps)
   const handleClosePopover = useCallback(() => {
     setOpenPopover(null);
   }, []);
+
+  const handleRemoveOpen = () => {
+    setRemoveOpen(true);
+    setOpenPopover(null);
+  };
+  const handleRemoveClose = () => {
+    setRemoveOpen(false);
+  };
+  const handleRemove = async (e: FormEvent) => {
+    e.preventDefault();
+    handleRemoveClose();
+
+    const res = await user.remove();
+    if (res) reloadUsers();
+  };
 
   return (
     <>
@@ -84,12 +104,36 @@ export function UserTableRow({ user, selected, onSelectRow }: UserTableRowProps)
             },
           }}
         >
-          <MenuItem sx={{ color: 'error.main' }}>
+          <MenuItem sx={{ color: 'error.main' }} onClick={handleRemoveOpen}>
             <Iconify icon="solar:trash-bin-trash-bold" />
             削除
           </MenuItem>
         </MenuList>
       </Popover>
+      <Dialog open={removeOpen} onClose={handleRemoveClose} maxWidth="sm" fullWidth>
+        <DialogTitle>このユーザーを本当に削除しますか？</DialogTitle>
+        <IconButton
+          onClick={handleRemoveClose}
+          sx={{
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: (theme) => theme.palette.grey[500],
+          }}
+        >
+          <Iconify icon="eva:close-outline" />
+        </IconButton>
+        <form onSubmit={handleRemove}>
+          <DialogActions>
+            <Button color="error" variant="contained" type="submit">
+              削除
+            </Button>
+            <Button color="inherit" variant="outlined" onClick={handleRemoveClose}>
+              キャンセル
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
     </>
   );
 }

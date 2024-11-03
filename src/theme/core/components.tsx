@@ -167,6 +167,14 @@ const MuiFab: Components<Theme>['MuiFab'] = {
   },
 };
 
+const MuiDialog: Components<Theme>['MuiDialog'] = {
+  styleOverrides: {
+    paper: {
+      borderRadius: 18,
+    },
+  },
+};
+
 const MuiDialogTitle: Components<Theme>['MuiDialogTitle'] = {
   styleOverrides: {
     root: {
@@ -199,6 +207,7 @@ export const components = {
   MuiOutlinedInput,
   MuiFormControlLabel,
   MuiFab,
+  MuiDialog,
   MuiDialogTitle,
   MuiDialogActions,
 };

@@ -196,7 +196,7 @@ export default function FileDialogs({
       <Dialog open={renameOpen} onClose={handleRenameClose} maxWidth="xs" fullWidth>
         <DialogTitle>名前の変更</DialogTitle>
         <IconButton
-          onClick={() => handleRenameClose}
+          onClick={handleRenameClose}
           sx={(theme) => ({
             position: 'absolute',
             right: 8,

@@ -52,8 +52,8 @@ export default class User {
     return result.data.result;
   }
 
-  static async remove(userId: number): Promise<boolean> {
-    const result = await axios.post('/user/remove', { userId });
+  async remove(): Promise<boolean> {
+    const result = await axios.delete(`/user/remove?user_id=${this.id}`);
     return result.data.result;
   }
 }

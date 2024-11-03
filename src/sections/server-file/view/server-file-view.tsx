@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
@@ -17,7 +17,7 @@ import { RouterLink } from 'src/routes/components';
 
 import Server from 'src/api/server';
 import ServerState from 'src/abc/server-state';
-import WebSocketClient from 'src/api/ws-client';
+import { WebSocketContext } from 'src/websocket';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { ServerStateLabel } from 'src/components/server-state-label';
@@ -36,10 +36,10 @@ export function ServerFileView() {
   const { id } = useParams<{ id: string }>();
   const [server, setServer] = useState<Server | null>(null);
   const [state, setState] = useState<ServerState>(ServerState.UNKNOWN);
-  const [ws, setWs] = useState<WebSocketClient | null>(null);
+  const ws = useContext(WebSocketContext);
 
   useEffect(() => {
-    if (!id) return undefined;
+    if (!id) return;
 
     async function getServer() {
       try {
@@ -53,18 +53,11 @@ export function ServerFileView() {
     }
     getServer();
 
-    const _ws = new WebSocketClient();
-    setWs(_ws);
-
-    _ws.addEventListener('ServerChangeState', (event) => {
+    ws.addEventListener('ServerChangeState', (event) => {
       if (event.serverId === id) {
         setState(event.newState);
       }
     });
-
-    return () => {
-      _ws.close();
-    };
 
     // eslint-disable-next-line
   }, []);

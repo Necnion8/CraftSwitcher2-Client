@@ -1,5 +1,5 @@
-import type WebSocketClient from 'src/api/ws-client';
-import type { FileTaskEvent } from 'src/api/ws-client';
+import type { WebSocketClient } from 'src/websocket';
+import type { FileTaskEvent } from 'src/websocket/client';
 import type { FileManager, ServerDirectory } from 'src/api/file-manager';
 
 import React, { type FormEvent } from 'react';

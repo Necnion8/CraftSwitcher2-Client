@@ -1,7 +1,7 @@
-import type { PerformanceProgress } from 'src/api/ws-client';
+import type { PerformanceProgress } from 'src/websocket/client';
 
 import { useParams } from 'react-router-dom';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 
 import Box from '@mui/material/Box';
 import { Skeleton } from '@mui/lab';
@@ -25,7 +25,7 @@ import { RouterLink } from 'src/routes/components';
 
 import Server from 'src/api/server';
 import ServerState from 'src/abc/server-state';
-import WebSocketClient from 'src/api/ws-client';
+import { WebSocketContext } from 'src/websocket';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { ServerStateLabel } from 'src/components/server-state-label';
@@ -48,10 +48,10 @@ export function ServerSummaryView() {
     id: string;
     jvm: { cpuUsage: number; memTotal: number; memUsed: number };
   } | null>(null);
-  const [ws, setWs] = useState<WebSocketClient | null>(null);
+  const ws = useContext(WebSocketContext);
 
   useEffect(() => {
-    if (!id) return undefined;
+    if (!id) return;
 
     async function getServer() {
       try {
@@ -66,16 +66,13 @@ export function ServerSummaryView() {
 
     getServer();
 
-    const _ws = new WebSocketClient();
-    setWs(_ws);
-
-    _ws.addEventListener('ServerChangeState', (e) => {
+    ws.addEventListener('ServerChangeState', (e) => {
       if (e.serverId === id) {
         setState(e.newState);
       }
     });
 
-    _ws.addEventListener('PerformanceProgress', (e) => {
+    ws.addEventListener('PerformanceProgress', (e) => {
       console.log(e);
       setPerformance(e);
       const s = e.servers.find((sv) => sv.id === id);
@@ -83,10 +80,6 @@ export function ServerSummaryView() {
         setServerPerformance(s);
       }
     });
-
-    return () => {
-      _ws.close();
-    };
 
     // eslint-disable-next-line
   }, []);

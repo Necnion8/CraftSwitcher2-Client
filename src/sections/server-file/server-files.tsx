@@ -1,7 +1,6 @@
 import type Server from 'src/api/server';
-import type WebSocketClient from 'src/api/ws-client';
-import type { FileTaskEvent } from 'src/api/ws-client';
 import type { FileManager } from 'src/api/file-manager';
+import type { FileTaskEvent, WebSocketClient } from 'src/websocket/client';
 
 import { useSearchParams } from 'react-router-dom';
 import React, { useState, useEffect, useCallback } from 'react';
@@ -26,7 +25,7 @@ import ServerFileContextMenu from './server-file-contextmenu';
 
 type Props = {
   server: Server | null;
-  ws: WebSocketClient | null;
+  ws: WebSocketClient;
 };
 
 type AnchorPosition = { top: number; left: number } | undefined;
@@ -205,10 +204,10 @@ export default function ServerFiles({ server, ws }: Props) {
               if (e.src === file.src) {
                 if (e.result !== 'success') error += 1;
                 done += 1;
-                ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
+                ws.removeEventListener('FileTaskEnd', fileTaskEndEvent);
               }
             };
-            ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
+            ws.addEventListener('FileTaskEnd', fileTaskEndEvent);
             return;
           }
           if (!res) {
@@ -268,10 +267,10 @@ export default function ServerFiles({ server, ws }: Props) {
             // TODO: エラーハンドリング
           }
           reloadFiles();
-          ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
+          ws.removeEventListener('FileTaskEnd', fileTaskEndEvent);
         }
       };
-      ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
+      ws.addEventListener('FileTaskEnd', fileTaskEndEvent);
       return;
     }
     if (!res) {

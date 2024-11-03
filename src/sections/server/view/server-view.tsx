@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useContext, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -10,7 +10,7 @@ import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 
 import Server from 'src/api/server';
-import WebSocketClient from 'src/api/ws-client';
+import { WebSocketContext } from 'src/websocket';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
@@ -29,7 +29,7 @@ export function ServerView() {
   const table = useTable();
 
   const [servers, setServers] = useState<Server[]>([]);
-  const [ws, setWs] = useState<WebSocketClient | null>(null);
+  const ws = useContext(WebSocketContext);
 
   const [isLoading, setIsLoading] = useState(true);
   const [unableToLoad, setUnableToLoad] = useState(false);
@@ -49,11 +49,6 @@ export function ServerView() {
 
   useEffect(() => {
     getServers();
-
-    const _ws = new WebSocketClient();
-    setWs(_ws);
-
-    return () => _ws.close();
   }, []);
 
   return (
@@ -103,7 +98,7 @@ export function ServerView() {
                   <ServerTableRow
                     key={server.id}
                     server={server}
-                    ws={ws!}
+                    ws={ws}
                     selected={table.selected.includes(server.id)}
                     onSelectRow={() => table.onSelectRow(server.id)}
                     reloadServers={getServers}

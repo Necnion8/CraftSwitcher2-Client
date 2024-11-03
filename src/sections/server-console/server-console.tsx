@@ -1,6 +1,6 @@
 import type Server from 'src/api/server';
 import type ServerState from 'src/abc/server-state';
-import WebSocketClient, { ServerProcessReadEvent } from 'src/api/ws-client';
+import type { WebSocketClient, ServerProcessReadEvent } from 'src/websocket';
 
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';

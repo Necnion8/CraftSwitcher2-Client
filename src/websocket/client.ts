@@ -3,12 +3,12 @@ import axios from 'axios';
 
 import ServerState from 'src/abc/server-state';
 
-import Server from './server';
+import Server from '../api/server';
 
 // ----------------------------------------------------------------------
 
 // TODO: イベント追加
-export default class WebSocketClient {
+export class WebSocketClient {
   private ws: WebSocket;
 
   private events = new Map<any, ((e: any) => void)[]>();
@@ -16,6 +16,7 @@ export default class WebSocketClient {
   constructor() {
     this.ws = new WebSocket(`${axios.defaults.baseURL || ''}/ws`);
     this.ws.onmessage = this.onMessage.bind(this);
+    console.log('aa');
   }
 
   public sendLine(serverId: string, data: string): void {
@@ -191,7 +192,7 @@ export class FileTaskEvent {
   }
 }
 
-interface EventMap {
+export interface EventMap {
   PerformanceProgress: PerformanceProgress;
   ServerProcessRead: ServerProcessReadEvent;
   ServerChangeState: ServerChangeStateEvent;

@@ -1,6 +1,6 @@
 import type { FormEvent } from 'react';
 import type Server from 'src/api/server';
-import type WebSocketClient from 'src/api/ws-client';
+import type { WebSocketClient } from 'src/websocket';
 
 import { Link } from 'react-router-dom';
 import React, { useState, useEffect, useCallback } from 'react';
@@ -163,7 +163,7 @@ export function ServerTableRow({
         >
           <MenuItem onClick={handleRenameClick}>
             <Iconify icon="fluent:rename-16-filled" />
-            名前変更
+            名前の変更
           </MenuItem>
           <MenuItem onClick={handleRemoveClick} sx={{ color: 'error.main' }}>
             <Iconify icon="solar:trash-bin-trash-bold" />

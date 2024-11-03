@@ -186,84 +186,55 @@ export default function ServerFiles({ server, ws }: Props) {
 
   const handlePaste = useCallback(async () => {
     handleCloseMenu();
-    if (copyFiles.length) {
-      // TODO: 重複のときの置き換え確認
-      const { length } = copyFiles;
-      let error = 0;
-      let done = 0;
-      await Promise.all(
-        copyFiles.map(async (file) => {
-          try {
-            const res = await file.copy(directory?.src!);
-            if (!res) error += 1;
-          } catch (e) {
-            console.error(e);
+    const currentFiles = copyFiles.length ? copyFiles : cutFiles;
+
+    const { length } = currentFiles;
+    if (length === 0) return;
+
+    let error = 0;
+    let done = 0;
+
+    await Promise.all(
+      currentFiles.map(async (file) => {
+        try {
+          const res = copyFiles.length
+            ? await file.copy(directory?.src!)
+            : await file.move(directory?.src!);
+          if (typeof res === 'number') {
+            const fileTaskEndEvent = (e: FileTaskEvent) => {
+              if (e.src === file.src) {
+                if (e.result !== 'success') error += 1;
+                done += 1;
+                ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
+              }
+            };
+            ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
+            return;
           }
-          const fileTaskEndEvent = (e: FileTaskEvent) => {
-            if (e.src === file.src) {
-              if (e.result !== 'success') error += 1;
-              done += 1;
-              ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
-            }
-          };
-          ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
-        })
-      );
-
-      if (error) {
-        /* empty */
-      }
-      // TODO: エラーハンドリング
-      let i = 0;
-      const checkDone = () => {
-        if (done === length || i > 40) {
-          reloadFiles();
-          clearInterval(interval);
-          return;
-        }
-        i += 1;
-      };
-      const interval = setInterval(checkDone, 500);
-    }
-
-    if (cutFiles.length) {
-      const { length } = cutFiles;
-      let error = 0;
-      let done = 0;
-      await Promise.all(
-        cutFiles.map(async (file) => {
-          try {
-            const res = await file.move(directory?.src!);
-            if (!res) error += 1;
-          } catch (e) {
-            console.log(e);
+          if (!res) {
+            error += 1;
           }
-          const fileTaskEndEvent = (e: FileTaskEvent) => {
-            if (e.src === file.src) {
-              if (e.result !== 'success') error += 1;
-              done += 1;
-              ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
-            }
-          };
-          ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
-        })
-      );
-
-      if (error) {
-        /* empty */
-      }
-      // TODO: エラーハンドリング
-      let i = 1;
-      const checkDone = () => {
-        if (done === length || i > 40) {
-          reloadFiles();
-          clearInterval(interval);
+          done += 1;
+        } catch (e) {
+          console.error(e);
         }
+      })
+    );
 
-        i += 1;
-      };
-      const interval = setInterval(checkDone, 500);
+    if (error) {
+      /* empty */
     }
+    // TODO: エラーハンドリング
+    let i = 0;
+    const checkDone = () => {
+      if (done === length || i > 40) {
+        reloadFiles();
+        clearInterval(interval);
+        return;
+      }
+      i += 1;
+    };
+    const interval = setInterval(checkDone, 500);
   }, [copyFiles, cutFiles, directory?.src, reloadFiles, ws]);
 
   const handleDownload = useCallback(async () => {
@@ -289,7 +260,25 @@ export default function ServerFiles({ server, ws }: Props) {
     handleCloseMenu();
     const file = table.selected[0] as ServerFile;
     const res = await file.extract(file.fileName);
-  }, [table]);
+    if (typeof res === 'number') {
+      const fileTaskEndEvent = (e: FileTaskEvent) => {
+        if (e.src === file.src) {
+          if (e.result !== 'success') {
+            /* empty */
+            // TODO: エラーハンドリング
+          }
+          reloadFiles();
+          ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
+        }
+      };
+      ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
+      return;
+    }
+    if (!res) {
+      /* empty */
+    }
+    reloadFiles();
+  }, [reloadFiles, table.selected, ws]);
 
   // イベント系
   const onContextMenu = (

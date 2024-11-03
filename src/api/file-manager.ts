@@ -12,12 +12,13 @@ export class ServerFileList extends Array<FileManager> {
    * @param name アーカイブファイル名
    * @param location 保存先のパス
    * @param filesRoot 格納するファイルのルートパス
+   * @returns 作成に成功した場合はタスクID、失敗した場合はfalse
    */
   async createArchiveFile(
     name: string,
     location: string,
     filesRoot: string
-  ): Promise<number | boolean> {
+  ): Promise<number | false> {
     const _path: string = path.join(location, name);
 
     const params = new URLSearchParams({
@@ -29,13 +30,8 @@ export class ServerFileList extends Array<FileManager> {
     const result = await axios.post(
       `/server/${this[0].serverId}/file/archive/make?${params.toString()}`
     );
-    const { data }: { data: TaskResult } = result;
 
-    return data.result === 'success'
-      ? true
-      : data.result === 'pending'
-        ? result.data.task_id
-        : false;
+    return result.data.task_id || false;
   }
 }
 
@@ -304,19 +300,15 @@ export class ServerDirectory extends FileManager {
   /**
    * フォルダを作成します
    * @param name 作成するフォルダ名
-   * @returns 作成に成功した場合はtrue、実行中の場合はタスクID、失敗した場合はfalse
+   * @returns 作成に成功した場合はtrue、失敗した場合はfalse
    */
-  async mkdir(name: string): Promise<number | boolean> {
+  async mkdir(name: string): Promise<boolean> {
     const result = await axios.post(
       `/server/${this.serverId}/file/mkdir?path=${path.join(this.src, name)}`
     );
     const { data }: { data: TaskResult } = result;
 
-    return data.result === 'success'
-      ? true
-      : data.result === 'pending'
-        ? result.data.task_id
-        : false;
+    return data.result === 'success';
   }
 
   async uploadFile(file: File): Promise<number | boolean> {

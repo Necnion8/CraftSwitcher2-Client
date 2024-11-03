@@ -86,17 +86,22 @@ export default function FileDialogs({
     }
 
     setRenameOpen(false);
-    const taskId = await selected[0].rename(renameValue);
+    const res = await selected[0].rename(renameValue);
 
-    if (taskId === false) return; // TODO: エラーハンドリング
-
-    const fileTaskEndEvent = (fileTaskEvent: FileTaskEvent) => {
-      if (fileTaskEvent.taskId === taskId) {
-        reloadFiles();
-        ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
-      }
-    };
-    ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
+    if (typeof res === 'number') {
+      const fileTaskEndEvent = (fileTaskEvent: FileTaskEvent) => {
+        if (fileTaskEvent.taskId === res) {
+          reloadFiles();
+          ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
+        }
+      };
+      ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
+      return;
+    }
+    if (!res) {
+      // TODO: エラーハンドリング
+    }
+    reloadFiles();
   };
 
   const handleRemove = async (e: FormEvent) => {
@@ -110,19 +115,21 @@ export default function FileDialogs({
     let done = 0;
     await Promise.all(
       selected.map(async (file) => {
-        const taskId = await file.remove();
-        if (taskId === false) {
-          error += 1;
+        const res = await file.remove();
+        if (typeof res === 'number') {
+          const fileTaskEndEvent = (fileTaskEvent: FileTaskEvent) => {
+            if (fileTaskEvent.src === file.src) {
+              done += 1;
+              ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
+            }
+          };
+          ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
           return;
         }
-
-        const fileTaskEndEvent = (fileTaskEvent: FileTaskEvent) => {
-          if (fileTaskEvent.src === file.src) {
-            done += 1;
-            ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
-          }
-        };
-        ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
+        if (!res) {
+          error += 1;
+        }
+        done += 1;
       })
     );
 
@@ -181,14 +188,7 @@ export default function FileDialogs({
     setMkdirOpen(false);
     setMkdirValue('');
 
-    // TODO: レスポンスのtask_idがnullになっている
-    const fileTaskEndEvent = (fileTaskEvent: FileTaskEvent) => {
-      if (fileTaskEvent.taskId === res) {
-        reloadFiles();
-        ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
-      }
-    };
-    ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
+    if (res) reloadFiles();
   };
 
   return (

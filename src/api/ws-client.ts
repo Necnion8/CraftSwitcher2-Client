@@ -80,7 +80,6 @@ export default class WebSocketClient {
 
           case 'file_task_end': {
             const { task } = data;
-            console.log(task);
             const ev = new FileTaskEvent(
               task.dst,
               task.id,

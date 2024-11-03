@@ -2,6 +2,7 @@ import type { FileManager } from 'src/api/file-manager';
 
 import React from 'react';
 
+import Box from '@mui/material/Box';
 import Popover from '@mui/material/Popover';
 import MenuList from '@mui/material/MenuList';
 import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
@@ -76,7 +77,7 @@ export default function ServerFileContextMenu({
         }}
       >
         {selected.length > 0 ? (
-          <>
+          <Box>
             {selected.length === 1 && selected[0].type.equal(FileType.ARCHIVE) && (
               <MenuItem onClick={handleExtract}>
                 <Iconify icon="fluent:folder-arrow-right-16-regular" />
@@ -119,9 +120,9 @@ export default function ServerFileContextMenu({
               <Iconify icon="fluent:delete-16-regular" />
               削除
             </MenuItem>
-          </>
+          </Box>
         ) : (
-          <>
+          <Box>
             {existsMoveFile && (
               <MenuItem onClick={handlePaste}>
                 <Iconify icon="fluent:clipboard-paste-16-regular" />
@@ -133,7 +134,7 @@ export default function ServerFileContextMenu({
               <Iconify icon="fluent:folder-add-16-regular" />
               新規フォルダ
             </MenuItem>
-          </>
+          </Box>
         )}
       </MenuList>
     </Popover>

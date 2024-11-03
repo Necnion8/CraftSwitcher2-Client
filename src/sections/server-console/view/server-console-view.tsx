@@ -1,4 +1,5 @@
 import type { Breakpoint } from '@mui/material/styles';
+import type { ServerChangeStateEvent } from 'src/websocket';
 
 import { useParams } from 'react-router-dom';
 import React, { useState, useEffect, useContext } from 'react';
@@ -41,7 +42,7 @@ export function ServerConsoleView() {
   const ws = useContext(WebSocketContext);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id) return undefined;
 
     (async () => {
       try {
@@ -54,11 +55,18 @@ export function ServerConsoleView() {
       }
     })();
 
-    ws.addEventListener('ServerChangeState', (event) => {
-      if (event.serverId === id) {
-        setState(event.newState);
+    const onServerChangeState = (e: ServerChangeStateEvent) => {
+      if (e.serverId === id) {
+        setState(e.newState);
       }
-    });
+    };
+
+    ws.addEventListener('ServerChangeState', onServerChangeState);
+
+    return () => {
+      ws.removeEventListener('ServerChangeState', onServerChangeState);
+    };
+
     // eslint-disable-next-line
   }, []);
 

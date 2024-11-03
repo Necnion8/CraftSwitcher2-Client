@@ -1,4 +1,4 @@
-import type { PerformanceProgress } from 'src/websocket/client';
+import type { PerformanceProgress, ServerChangeStateEvent } from 'src/websocket/client';
 
 import { useParams } from 'react-router-dom';
 import React, { useState, useEffect, useContext } from 'react';
@@ -51,9 +51,9 @@ export function ServerSummaryView() {
   const ws = useContext(WebSocketContext);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id) return undefined;
 
-    async function getServer() {
+    (async () => {
       try {
         const res = await Server.get(id!);
         setServer(res!);
@@ -62,24 +62,28 @@ export function ServerSummaryView() {
         // TODO: エラーハンドリング
         console.error(e);
       }
-    }
+    })();
 
-    getServer();
-
-    ws.addEventListener('ServerChangeState', (e) => {
+    const onServerChangeState = (e: ServerChangeStateEvent) => {
       if (e.serverId === id) {
         setState(e.newState);
       }
-    });
-
-    ws.addEventListener('PerformanceProgress', (e) => {
-      console.log(e);
+    };
+    const onPerformanceProgress = (e: PerformanceProgress) => {
       setPerformance(e);
       const s = e.servers.find((sv) => sv.id === id);
       if (s) {
         setServerPerformance(s);
       }
-    });
+    };
+
+    ws.addEventListener('ServerChangeState', onServerChangeState);
+    ws.addEventListener('PerformanceProgress', onPerformanceProgress);
+
+    return () => {
+      ws.removeEventListener('ServerChangeState', onServerChangeState);
+      ws.removeEventListener('PerformanceProgress', onPerformanceProgress);
+    };
 
     // eslint-disable-next-line
   }, []);

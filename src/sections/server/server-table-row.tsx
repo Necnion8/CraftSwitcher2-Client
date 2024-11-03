@@ -1,6 +1,6 @@
 import type { FormEvent } from 'react';
 import type Server from 'src/api/server';
-import type { WebSocketClient } from 'src/websocket';
+import type { WebSocketClient, ServerChangeStateEvent } from 'src/websocket';
 
 import { Link } from 'react-router-dom';
 import React, { useState, useEffect, useCallback } from 'react';
@@ -94,11 +94,17 @@ export function ServerTableRow({
   };
 
   useEffect(() => {
-    ws.addEventListener('ServerChangeState', (e) => {
+    const onServerChangeState = (e: ServerChangeStateEvent) => {
       if (e.serverId === server.id) {
         setState(e.newState);
       }
-    });
+    };
+
+    ws.addEventListener('ServerChangeState', onServerChangeState);
+
+    return () => {
+      ws.removeEventListener('ServerChangeState', onServerChangeState);
+    };
   });
 
   return (

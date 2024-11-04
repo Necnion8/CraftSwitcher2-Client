@@ -296,7 +296,7 @@ export default function ServerFiles({ server, ws }: Props) {
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (renameOpen || removeOpen || archiveOpen) return;
+      if (renameOpen || removeOpen || archiveOpen || mkdirOpen) return;
       if (e.repeat) return;
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -312,7 +312,15 @@ export default function ServerFiles({ server, ws }: Props) {
         handlePaste();
       }
     },
-    [archiveOpen, handlePaste, handleSetCopyFiles, handleSetCutFiles, removeOpen, renameOpen]
+    [
+      archiveOpen,
+      handlePaste,
+      handleSetCopyFiles,
+      handleSetCutFiles,
+      mkdirOpen,
+      removeOpen,
+      renameOpen,
+    ]
   );
 
   const handleClick = (e: React.MouseEvent<HTMLTableElement>) => {

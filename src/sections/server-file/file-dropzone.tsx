@@ -1,5 +1,7 @@
+import type { FileWithPath } from 'react-dropzone';
 import type { ServerDirectory } from 'src/api/file-manager';
 
+import path from 'path-browserify';
 import React, { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 
@@ -24,12 +26,50 @@ export default function FileDropZone({ isActive, setIsActive, directory, reloadF
   }, [setIsActive]);
 
   const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      let error = 0;
+    async (acceptedFiles: FileWithPath[]) => {
+      if (!directory) return;
+
+      // 一意のディレクトリを抽出
+      const uniqueDirs: string[] = [];
       acceptedFiles.forEach((file) => {
-        const res = directory?.uploadFile(file);
-        if (!res) error += 1;
+        const dirPath: string = path.dirname(file.path); // ファイルのディレクトリを指定
+        const dirParts = dirPath.split(path.sep);
+
+        // 下の階層のディレクトリがあったら削除
+        let currentPath = '';
+        dirParts.forEach((part) => {
+          currentPath = path.join(currentPath, part);
+          if (uniqueDirs.includes(currentPath)) {
+            delete uniqueDirs[uniqueDirs.indexOf(currentPath)];
+          }
+        });
+
+        // 上の階層のディレクトリがないか確認
+        let existsUpper = false;
+        Array.from(uniqueDirs).forEach((uniqueDir) => {
+          if (uniqueDir.startsWith(dirPath)) {
+            existsUpper = true;
+          }
+        });
+
+        // ディレクトリを追加
+        if (!existsUpper) uniqueDirs.push(dirPath);
       });
+
+      await Promise.all(
+        uniqueDirs.map(async (dir) => {
+          await directory.mkdir(dir, true);
+        })
+      );
+
+      // ファイルをアップロード
+      let error = 0;
+      await Promise.all(
+        acceptedFiles.map(async (file) => {
+          const res = await directory.uploadFile(file);
+          if (!res) error += 1;
+        })
+      );
 
       if (error) {
         // TODO: エラーハンドリング

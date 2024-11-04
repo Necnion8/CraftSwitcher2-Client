@@ -1,4 +1,6 @@
 // eslint-disable-next-line max-classes-per-file
+import type { FileWithPath } from 'react-dropzone';
+
 import axios from 'axios';
 import path from 'path-browserify';
 
@@ -300,22 +302,24 @@ export class ServerDirectory extends FileManager {
   /**
    * フォルダを作成します
    * @param name 作成するフォルダ名
+   * @param parents 親ディレクトリも作成
    * @returns 作成に成功した場合はtrue、失敗した場合はfalse
    */
-  async mkdir(name: string): Promise<boolean> {
+  async mkdir(name: string, parents: boolean = false): Promise<boolean> {
     const result = await axios.post(
-      `/server/${this.serverId}/file/mkdir?path=${path.join(this.src, name)}`
+      `/server/${this.serverId}/file/mkdir?path=${path.join(this.src, name)}${parents && '&parents=true'}`
     );
     const { data }: { data: TaskResult } = result;
 
     return data.result === 'success';
   }
 
-  async uploadFile(file: File): Promise<boolean> {
+  async uploadFile(file: File | FileWithPath): Promise<boolean> {
     const formData = new FormData();
     formData.append('file', file);
 
-    const filePath = path.join(this.src, file.name);
+    const name = 'path' in file ? file.path : file.name;
+    const filePath = path.join(this.src, name);
 
     const result = await axios.post(`/server/${this.serverId}/file?path=${filePath}`, formData);
     return result.status === 200;

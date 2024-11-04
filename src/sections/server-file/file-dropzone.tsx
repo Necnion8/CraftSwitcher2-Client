@@ -36,25 +36,18 @@ export default function FileDropZone({ isActive, setIsActive, directory, reloadF
         const dirParts = dirPath.split(path.sep);
 
         // 下の階層のディレクトリがあったら削除
-        let currentPath = '';
-        dirParts.forEach((part) => {
-          currentPath = path.join(currentPath, part);
-          if (uniqueDirs.includes(currentPath)) {
-            delete uniqueDirs[uniqueDirs.indexOf(currentPath)];
-          }
+        dirParts.reduce((currentPath, part) => {
+          if (uniqueDirs.includes(currentPath)) delete uniqueDirs[uniqueDirs.indexOf(currentPath)];
+          return path.join(currentPath, part);
         });
 
         // 上の階層のディレクトリがないか確認
-        let existsUpper = false;
-        Array.from(uniqueDirs).forEach((uniqueDir) => {
-          if (uniqueDir.startsWith(dirPath)) {
-            existsUpper = true;
-          }
-        });
-
-        // ディレクトリを追加
-        if (!existsUpper) uniqueDirs.push(dirPath);
+        if (!uniqueDirs.some((dir) => dir.startsWith(dirPath))) {
+          uniqueDirs.push(dirPath);
+        }
       });
+
+      console.log(uniqueDirs);
 
       await Promise.all(
         uniqueDirs.map(async (dir) => {

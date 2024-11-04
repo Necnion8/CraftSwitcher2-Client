@@ -33,6 +33,8 @@ export default function FileDropZone({ isActive, setIsActive, directory, reloadF
       const uniqueDirs: string[] = [];
       acceptedFiles.forEach((file) => {
         const dirPath: string = path.dirname(file.path); // ファイルのディレクトリを指定
+        if (dirPath === '.') return;
+
         const dirParts = dirPath.split(path.sep);
 
         // 下の階層のディレクトリがあったら削除

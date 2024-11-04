@@ -307,7 +307,7 @@ export class ServerDirectory extends FileManager {
    */
   async mkdir(name: string, parents: boolean = false): Promise<boolean> {
     const result = await axios.post(
-      `/server/${this.serverId}/file/mkdir?path=${path.join(this.src, name)}${parents && '&parents=true'}`
+      `/server/${this.serverId}/file/mkdir?path=${path.join(this.src, name)}${parents ? '&parents=true' : ''}`
     );
     const { data }: { data: TaskResult } = result;
 

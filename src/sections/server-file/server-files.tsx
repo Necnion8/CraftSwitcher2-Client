@@ -186,9 +186,7 @@ export default function ServerFiles({ server, ws }: Props) {
   const handlePaste = useCallback(async () => {
     handleCloseMenu();
     const currentFiles = copyFiles.length ? copyFiles : cutFiles;
-
-    const { length } = currentFiles;
-    if (length === 0) return;
+    if (currentFiles.length === 0) return;
 
     let error = 0;
     let done = 0;
@@ -210,9 +208,7 @@ export default function ServerFiles({ server, ws }: Props) {
             ws.addEventListener('FileTaskEnd', fileTaskEndEvent);
             return;
           }
-          if (!res) {
-            error += 1;
-          }
+          if (!res) error += 1;
           done += 1;
         } catch (e) {
           console.error(e);
@@ -225,15 +221,13 @@ export default function ServerFiles({ server, ws }: Props) {
     }
     // TODO: エラーハンドリング
     let i = 0;
-    const checkDone = () => {
-      if (done === length || i > 40) {
+    const interval = setInterval(() => {
+      if (done === currentFiles.length || i > 120) {
         reloadFiles();
         clearInterval(interval);
-        return;
       }
       i += 1;
-    };
-    const interval = setInterval(checkDone, 500);
+    }, 500);
   }, [copyFiles, cutFiles, directory?.src, reloadFiles, ws]);
 
   const handleDownload = useCallback(async () => {

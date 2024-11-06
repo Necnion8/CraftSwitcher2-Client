@@ -54,6 +54,7 @@ export default class Server {
     directory,
     type,
     launchOption = {
+      javaPreset: null,
       javaExecutable: null,
       javaOptions: null,
       jarFile: '',
@@ -77,6 +78,7 @@ export default class Server {
         directory,
         type: type.name,
         launch_option: {
+          java_preset: launchOption.javaPreset,
           java_executable: launchOption.javaExecutable,
           java_options: launchOption.javaOptions,
           jar_file: launchOption.jarFile,
@@ -180,6 +182,7 @@ export default class Server {
       name: result.data.name,
       type: result.data.type,
       launchOption: {
+        javaPreset: result.data.launch_option.java_preset,
         javaExecutable: result.data.launch_option.java_executable,
         javaOptions: result.data.launch_option.java_options,
         jarFile: result.data.launch_option.jar_file,
@@ -209,6 +212,7 @@ export default class Server {
       {
         name: config.name,
         type: config.type,
+        'launch_option.java_preset': config.launchOption?.javaPreset,
         'launch_option.java_executable': config.launchOption?.javaExecutable,
         'launch_option.java_options': config.launchOption?.javaOptions,
         'launch_option.jar_file': config.launchOption?.jarFile,
@@ -243,12 +247,13 @@ export default class Server {
    * サーバーJarのインストールをします
    * ビルドが必要な場合は、サーバーの初回起動時に実行されます。
    */
-  async install(serverType: ServerType, build: string, version: string): Promise<string> {
-    const result = await axios.post(`/server/${this.id}/install`, {
-      server_type: serverType,
-      build,
+  async install(serverType: ServerType, version: string, build: string): Promise<string> {
+    const params = new URLSearchParams({
+      server_type: serverType.name,
       version,
+      build,
     });
+    const result = await axios.post(`/server/${this.id}/install?${params.toString()}`);
     return result.data.result;
   }
 
@@ -299,6 +304,7 @@ type ServerConfig = {
 };
 
 type LaunchOption = {
+  javaPreset: string | null | undefined;
   javaExecutable: string | null | undefined;
   javaOptions: string | null | undefined;
   jarFile: string;

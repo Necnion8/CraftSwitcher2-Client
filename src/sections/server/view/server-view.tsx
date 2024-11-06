@@ -86,8 +86,8 @@ export function ServerView() {
                 }
                 headLabel={[
                   { id: 'name', label: '名前' },
-                  { id: 'createdAt', label: '作成日時' },
-                  { id: 'status', label: 'ステータス' },
+                  { id: 'type', label: '種類' },
+                  { id: 'status', label: '状態' },
                   { id: 'buttons' },
                   { id: 'manage' },
                   { id: '' },

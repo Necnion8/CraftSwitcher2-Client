@@ -25,6 +25,7 @@ import { Dialog, DialogTitle, DialogActions, DialogContent } from '@mui/material
 import { Iconify } from 'src/components/iconify';
 import { ServerStateLabel } from 'src/components/server-state-label';
 import { ServerProcessButton } from 'src/components/server-process-button';
+import { Label } from '../../components/label';
 
 // ----------------------------------------------------------------------
 
@@ -118,10 +119,11 @@ export function ServerTableRow({
           <Box gap={2} display="flex" alignItems="center">
             <Avatar alt={server.type.name} />
             <Typography variant="h6">{server.displayName}</Typography>
+            {!server.isLoaded && <Label color="error">未読み込み</Label>}
           </Box>
         </TableCell>
 
-        <TableCell>{server.isLoaded.toString()}</TableCell>
+        <TableCell>{server.type.displayName}</TableCell>
 
         <TableCell>
           <ServerStateLabel state={state} />

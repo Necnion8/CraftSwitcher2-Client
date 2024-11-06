@@ -152,7 +152,8 @@ export default function ServerCreateNew({ setPage }: { setPage: (page: number) =
     }
 
     try {
-      const latestBuild = (await type!.getBuilds(version))[-1];
+      const builds = await type!.getBuilds(version);
+      const latestBuild = builds[builds.length - 1];
       await server.install(type!, version, latestBuild.build);
     } catch (e) {
       /* empty */

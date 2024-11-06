@@ -247,12 +247,13 @@ export default class Server {
    * サーバーJarのインストールをします
    * ビルドが必要な場合は、サーバーの初回起動時に実行されます。
    */
-  async install(serverType: ServerType, build: string, version: string): Promise<string> {
-    const result = await axios.post(`/server/${this.id}/install`, {
-      server_type: serverType,
-      build,
+  async install(serverType: ServerType, version: string, build: string): Promise<string> {
+    const params = new URLSearchParams({
+      server_type: serverType.name,
       version,
+      build,
     });
+    const result = await axios.post(`/server/${this.id}/install?${params.toString()}`);
     return result.data.result;
   }
 

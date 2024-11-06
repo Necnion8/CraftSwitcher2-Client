@@ -273,6 +273,19 @@ export class FileManager {
     const result = await axios.get('/file/tasks');
     return result.data;
   }
+
+  static async getStorageInfo(
+    serverId?: string
+  ): Promise<{ totalSize: number; usedSize: number; freeSize: number }> {
+    const result = await axios.get(`/storage/info${serverId ? `?server_id=${serverId}` : ''}`);
+    const { data } = result;
+
+    return {
+      totalSize: data.total_size,
+      usedSize: data.used_size,
+      freeSize: data.free_size,
+    };
+  }
 }
 
 // --------------------------------------------

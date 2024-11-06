@@ -1,22 +1,52 @@
+import type { PerformanceProgress } from 'src/websocket';
+
+import { useState, useEffect, useContext } from 'react';
+
 import Grid from '@mui/material/Unstable_Grid2';
 import Typography from '@mui/material/Typography';
 
-import { _tasks, _posts, _timeline } from 'src/_mock';
+import Server from 'src/api/server';
+import { WebSocketContext } from 'src/websocket';
+import { FileManager } from 'src/api/file-manager';
 import { DashboardContent } from 'src/layouts/dashboard';
 
-import { AnalyticsNews } from '../analytics-news';
-import { AnalyticsTasks } from '../analytics-tasks';
+import { AnalyticsServerList } from '../analytics-server-list';
 import { AnalyticsCurrentVisits } from '../analytics-current-visits';
-import { AnalyticsOrderTimeline } from '../analytics-order-timeline';
-import { AnalyticsWebsiteVisits } from '../analytics-website-visits';
 import { AnalyticsWidgetSummary } from '../analytics-widget-summary';
-import { AnalyticsTrafficBySite } from '../analytics-traffic-by-site';
 import { AnalyticsCurrentSubject } from '../analytics-current-subject';
 import { AnalyticsConversionRates } from '../analytics-conversion-rates';
 
 // ----------------------------------------------------------------------
 
 export function OverviewAnalyticsView() {
+  const ws = useContext(WebSocketContext);
+
+  const [performance, setPerformance] = useState<PerformanceProgress>();
+  const [storageInfo, setStorageInfo] = useState<{
+    totalSize: number;
+    usedSize: number;
+    freeSize: number;
+  }>();
+  const [servers, setServers] = useState<Server[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const info = await FileManager.getStorageInfo();
+      setStorageInfo(info);
+
+      const s = await Server.all();
+      setServers(s);
+    })();
+
+    const onPerformanceProgress = (data: PerformanceProgress) => {
+      setPerformance(data);
+    };
+    ws.addEventListener('PerformanceProgress', onPerformanceProgress);
+    return () => {
+      ws.removeEventListener('PerformanceProgress', onPerformanceProgress);
+    };
+  }, [ws]);
+
   return (
     <DashboardContent maxWidth="xl">
       <Typography variant="h4" sx={{ mb: { xs: 3, md: 5 } }}>
@@ -27,7 +57,11 @@ export function OverviewAnalyticsView() {
         <Grid xs={12} sm={6} md={3}>
           <AnalyticsWidgetSummary
             title="CPU使用率"
-            value={32}
+            value={
+              performance
+                ? Math.round(performance.system.cpu.usage / performance.system.cpu.count)
+                : undefined
+            }
             unit="%"
             color="primary"
             icon={<img alt="icon" src="/assets/icons/glass/ic-glass-users.svg" />}
@@ -41,7 +75,15 @@ export function OverviewAnalyticsView() {
         <Grid xs={12} sm={6} md={3}>
           <AnalyticsWidgetSummary
             title="メモリ使用率"
-            value={52}
+            value={
+              performance
+                ? Math.round(
+                    ((performance.system.memory.total - performance.system.memory.available) /
+                      performance.system.memory.total) *
+                      100
+                  )
+                : undefined
+            }
             unit="%"
             color="secondary"
             icon={<img alt="icon" src="/assets/icons/glass/ic-glass-users.svg" />}
@@ -55,8 +97,12 @@ export function OverviewAnalyticsView() {
         <Grid xs={12} sm={6} md={3}>
           <AnalyticsWidgetSummary
             title="ストレージ使用量"
-            value={132}
-            unit="GB"
+            value={
+              storageInfo
+                ? Math.round((storageInfo.usedSize / storageInfo.totalSize) * 100)
+                : undefined
+            }
+            unit="%"
             color="warning"
             icon={<img alt="icon" src="/assets/icons/glass/ic-glass-buy.svg" />}
             chart={{
@@ -68,7 +114,7 @@ export function OverviewAnalyticsView() {
 
         <Grid xs={12} sm={6} md={3}>
           <AnalyticsWidgetSummary
-            title="Messages"
+            title="aaa"
             percent={3.6}
             value={234}
             color="error"
@@ -95,17 +141,7 @@ export function OverviewAnalyticsView() {
         </Grid>
 
         <Grid xs={12} md={6} lg={8}>
-          <AnalyticsWebsiteVisits
-            title="Website visits"
-            subheader="(+43%) than last year"
-            chart={{
-              categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
-              series: [
-                { name: 'Team A', data: [43, 33, 22, 37, 67, 68, 37, 24, 55] },
-                { name: 'Team B', data: [51, 70, 47, 67, 40, 37, 24, 70, 24] },
-              ],
-            }}
-          />
+          <AnalyticsServerList servers={servers} />
         </Grid>
 
         <Grid xs={12} md={6} lg={8}>
@@ -134,30 +170,6 @@ export function OverviewAnalyticsView() {
               ],
             }}
           />
-        </Grid>
-
-        <Grid xs={12} md={6} lg={8}>
-          <AnalyticsNews title="News" list={_posts.slice(0, 5)} />
-        </Grid>
-
-        <Grid xs={12} md={6} lg={4}>
-          <AnalyticsOrderTimeline title="Order timeline" list={_timeline} />
-        </Grid>
-
-        <Grid xs={12} md={6} lg={4}>
-          <AnalyticsTrafficBySite
-            title="Traffic by site"
-            list={[
-              { value: 'facebook', label: 'Facebook', total: 323234 },
-              { value: 'google', label: 'Google', total: 341212 },
-              { value: 'linkedin', label: 'Linkedin', total: 411213 },
-              { value: 'twitter', label: 'Twitter', total: 443232 },
-            ]}
-          />
-        </Grid>
-
-        <Grid xs={12} md={6} lg={8}>
-          <AnalyticsTasks title="Tasks" list={_tasks} />
         </Grid>
       </Grid>
     </DashboardContent>

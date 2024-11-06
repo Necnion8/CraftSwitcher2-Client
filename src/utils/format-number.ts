@@ -7,7 +7,7 @@ export type InputNumberValue = string | number | null | undefined;
 
 type Options = Intl.NumberFormatOptions | undefined;
 
-const DEFAULT_LOCALE = { code: 'en-US', currency: 'USD' };
+const DEFAULT_LOCALE = { code: 'ja-JP', currency: 'JPY' };
 
 function processInput(inputValue: InputNumberValue): number | null {
   if (inputValue == null || Number.isNaN(inputValue)) return null;
@@ -22,13 +22,11 @@ export function fNumber(inputValue: InputNumberValue, options?: Options) {
   const number = processInput(inputValue);
   if (number === null) return '';
 
-  const fm = new Intl.NumberFormat(locale.code, {
+  return new Intl.NumberFormat(locale.code, {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
     ...options,
   }).format(number);
-
-  return fm;
 }
 
 // ----------------------------------------------------------------------
@@ -39,15 +37,13 @@ export function fCurrency(inputValue: InputNumberValue, options?: Options) {
   const number = processInput(inputValue);
   if (number === null) return '';
 
-  const fm = new Intl.NumberFormat(locale.code, {
+  return new Intl.NumberFormat(locale.code, {
     style: 'currency',
     currency: locale.currency,
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
     ...options,
   }).format(number);
-
-  return fm;
 }
 
 // ----------------------------------------------------------------------
@@ -58,14 +54,12 @@ export function fPercent(inputValue: InputNumberValue, options?: Options) {
   const number = processInput(inputValue);
   if (number === null) return '';
 
-  const fm = new Intl.NumberFormat(locale.code, {
+  return new Intl.NumberFormat(locale.code, {
     style: 'percent',
     minimumFractionDigits: 0,
-    maximumFractionDigits: 1,
+    maximumFractionDigits: 0,
     ...options,
   }).format(number / 100);
-
-  return fm;
 }
 
 // ----------------------------------------------------------------------
@@ -96,7 +90,5 @@ export function fData(inputValue: InputNumberValue) {
   const baseValue = 1024;
 
   const index = Math.floor(Math.log(number) / Math.log(baseValue));
-  const fm = `${parseFloat((number / baseValue ** index).toFixed(decimal))} ${units[index]}`;
-
-  return fm;
+  return `${parseFloat((number / baseValue ** index).toFixed(decimal))} ${units[index]}`;
 }

@@ -129,6 +129,7 @@ export default function ServerCreateNew({ setPage }: { setPage: (page: number) =
         directory,
         type: type!,
         launchOption: {
+          javaPreset: null,
           javaExecutable,
           javaOptions,
           jarFile: '',

@@ -22,10 +22,10 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 import { Dialog, DialogTitle, DialogActions, DialogContent } from '@mui/material';
 
+import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { ServerStateLabel } from 'src/components/server-state-label';
 import { ServerProcessButton } from 'src/components/server-process-button';
-import { Label } from '../../components/label';
 
 // ----------------------------------------------------------------------
 

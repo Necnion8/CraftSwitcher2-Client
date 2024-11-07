@@ -1,5 +1,9 @@
 import axios from 'axios';
 
+import { APIError } from 'src/abc/api-error';
+
+// ------------------------------------------------------------
+
 export class ServerGlobalConfig {
   public javaExecutable: string;
 
@@ -29,8 +33,12 @@ export class ServerGlobalConfig {
   }
 
   static async get(): Promise<ServerGlobalConfig> {
-    const result = await axios.get('/config/server_global');
-    return new ServerGlobalConfig(result.data);
+    try {
+      const result = await axios.get('/config/server_global');
+      return new ServerGlobalConfig(result.data);
+    } catch (e) {
+      throw APIError.fromError(e);
+    }
   }
 }
 

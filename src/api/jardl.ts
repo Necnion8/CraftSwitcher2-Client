@@ -1,5 +1,9 @@
 import axios from 'axios';
 
+import { APIError } from 'src/abc/api-error';
+
+// ------------------------------------------------------------
+
 export default class ServerInstaller {
   static async getAvailableTypes(): Promise<string[]> {
     const result = await axios.get('/jardl/types');
@@ -9,8 +13,12 @@ export default class ServerInstaller {
   static async getVersions(
     type: string
   ): Promise<{ version: string; build_count: number | null }[]> {
-    const result = await axios.get(`/jardl/${type}/versions`);
-    return result.data;
+    try {
+      const result = await axios.get(`/jardl/${type}/versions`);
+      return result.data;
+    } catch (e) {
+      throw APIError.fromError(e);
+    }
   }
 
   static async getBuilds(
@@ -27,8 +35,12 @@ export default class ServerInstaller {
       is_loaded_info: true;
     }[]
   > {
-    const result = await axios.get(`/jardl/${type}/version/${version}/builds`);
-    return result.data;
+    try {
+      const result = await axios.get(`/jardl/${type}/version/${version}/builds`);
+      return result.data;
+    } catch (e) {
+      throw APIError.fromError(e);
+    }
   }
 
   static async getBuild(
@@ -44,7 +56,11 @@ export default class ServerInstaller {
     is_required_build: true;
     is_loaded_info: true;
   }> {
-    const result = await axios.get(`/jardl/${type}/version/${version}/build/${build}`);
-    return result.data;
+    try {
+      const result = await axios.get(`/jardl/${type}/version/${version}/build/${build}`);
+      return result.data;
+    } catch (e) {
+      throw APIError.fromError(e);
+    }
   }
 }

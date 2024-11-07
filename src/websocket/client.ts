@@ -124,16 +124,16 @@ export class WebSocketClient {
 
 export class PerformanceProgress {
   public servers: {
-    game: { ticks: number };
+    game: { ticks: number } | null;
     id: string;
-    jvm: { cpuUsage: number; memTotal: number; memUsed: number };
+    jvm: { cpuUsage: number; memTotal: number; memUsed: number } | null;
   }[];
 
   constructor(
     servers: {
-      game: { ticks: number };
+      game: { ticks: number } | null;
       id: string;
-      jvm: { cpu_usage: number; mem_total: number; mem_used: number };
+      jvm: { cpu_usage: number; mem_total: number; mem_used: number } | null;
     }[],
     public system: {
       cpu: { usage: number; count: number };
@@ -142,9 +142,11 @@ export class PerformanceProgress {
     public _timestamp: number
   ) {
     this.servers = servers.map((s) => ({
-      game: { ticks: s.game.ticks },
+      game: s.game ? { ticks: s.game.ticks } : null,
       id: s.id,
-      jvm: { cpuUsage: s.jvm.cpu_usage, memTotal: s.jvm.mem_total, memUsed: s.jvm.mem_used },
+      jvm: s.jvm
+        ? { cpuUsage: s.jvm.cpu_usage, memTotal: s.jvm.mem_total, memUsed: s.jvm.mem_used }
+        : null,
     }));
   }
 

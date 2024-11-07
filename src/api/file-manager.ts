@@ -5,6 +5,7 @@ import axios from 'axios';
 import path from 'path-browserify';
 
 import FileType from 'src/abc/file-type';
+import { APIError } from 'src/abc/api-error';
 
 // ----------------------------------------------------------------------
 
@@ -21,19 +22,23 @@ export class ServerFileList extends Array<FileManager> {
     location: string,
     filesRoot: string
   ): Promise<number | false> {
-    const _path: string = path.join(location, name);
+    try {
+      const _path: string = path.join(location, name);
 
-    const params = new URLSearchParams({
-      path: _path,
-      files_root: filesRoot,
-    });
-    this.forEach((f) => params.append('include_files', f.src));
+      const params = new URLSearchParams({
+        path: _path,
+        files_root: filesRoot,
+      });
+      this.forEach((f) => params.append('include_files', f.src));
 
-    const result = await axios.post(
-      `/server/${this[0].serverId}/file/archive/make?${params.toString()}`
-    );
+      const result = await axios.post(
+        `/server/${this[0].serverId}/file/archive/make?${params.toString()}`
+      );
 
-    return result.data.task_id || false;
+      return result.data.task_id || false;
+    } catch (e) {
+      throw APIError.fromError(e);
+    }
   }
 }
 
@@ -90,7 +95,7 @@ export class FileManager {
             count += 1;
             dstPath = path.join(to, `${path.basename(this.name, ext)} - コピー (${count})${ext}`);
           } else {
-            throw e;
+            throw APIError.fromError(e);
           }
         }
       }
@@ -98,16 +103,20 @@ export class FileManager {
 
     const dstPath = path.join(to, this.name);
 
-    const result = await axios.put(
-      `/server/${this.serverId}/file/copy?path=${this.src}&dst_path=${dstPath}`
-    );
-    const { data }: { data: TaskResult } = result;
+    try {
+      const result = await axios.put(
+        `/server/${this.serverId}/file/copy?path=${this.src}&dst_path=${dstPath}`
+      );
+      const { data }: { data: TaskResult } = result;
 
-    return data.result === 'success'
-      ? true
-      : data.result === 'pending'
-        ? result.data.task_id
-        : false;
+      return data.result === 'success'
+        ? true
+        : data.result === 'pending'
+          ? result.data.task_id
+          : false;
+    } catch (e) {
+      throw APIError.fromError(e);
+    }
   }
 
   /**
@@ -118,16 +127,20 @@ export class FileManager {
   async move(to: string): Promise<number | boolean> {
     const dstPath = path.join(to, this.name);
 
-    const result = await axios.put(
-      `/server/${this.serverId}/file/move?path=${this.src}&dst_path=${dstPath}`
-    );
-    const { data }: { data: TaskResult } = result;
+    try {
+      const result = await axios.put(
+        `/server/${this.serverId}/file/move?path=${this.src}&dst_path=${dstPath}`
+      );
+      const { data }: { data: TaskResult } = result;
 
-    return data.result === 'success'
-      ? true
-      : data.result === 'pending'
-        ? result.data.task_id
-        : false;
+      return data.result === 'success'
+        ? true
+        : data.result === 'pending'
+          ? result.data.task_id
+          : false;
+    } catch (e) {
+      throw APIError.fromError(e);
+    }
   }
 
   /**
@@ -138,16 +151,20 @@ export class FileManager {
   async rename(newName: string): Promise<number | boolean> {
     const newPath = path.join(this.path, newName);
 
-    const result = await axios.put(
-      `/server/${this.serverId}/file/move?path=${this.src}&dst_path=${newPath}`
-    );
-    const { data }: { data: TaskResult } = result;
+    try {
+      const result = await axios.put(
+        `/server/${this.serverId}/file/move?path=${this.src}&dst_path=${newPath}`
+      );
+      const { data }: { data: TaskResult } = result;
 
-    return data.result === 'success'
-      ? true
-      : data.result === 'pending'
-        ? result.data.task_id
-        : false;
+      return data.result === 'success'
+        ? true
+        : data.result === 'pending'
+          ? result.data.task_id
+          : false;
+    } catch (e) {
+      throw APIError.fromError(e);
+    }
   }
 
   /**
@@ -155,14 +172,18 @@ export class FileManager {
    * @returns 削除に成功した場合はtrue、実行中の場合はタスクID、失敗した場合はfalse
    */
   async remove(): Promise<number | boolean> {
-    const result = await axios.delete(`/server/${this.serverId}/file?path=${this.src}`);
-    const { data }: { data: TaskResult } = result;
+    try {
+      const result = await axios.delete(`/server/${this.serverId}/file?path=${this.src}`);
+      const { data }: { data: TaskResult } = result;
 
-    return data.result === 'success'
-      ? true
-      : data.result === 'pending'
-        ? result.data.task_id
-        : false;
+      return data.result === 'success'
+        ? true
+        : data.result === 'pending'
+          ? result.data.task_id
+          : false;
+    } catch (e) {
+      throw APIError.fromError(e);
+    }
   }
 
   /**
@@ -172,41 +193,45 @@ export class FileManager {
    * @returns ファイルまたはフォルダーのリスト
    */
   static async get(serverId: string, _path: string): Promise<ServerDirectory> {
-    const result = await axios.get(`/server/${serverId}/files?path=${_path}`);
-    const directory: FilesResult = result.data;
+    try {
+      const result = await axios.get(`/server/${serverId}/files?path=${_path}`);
+      const directory: FilesResult = result.data;
 
-    return new ServerDirectory(
-      serverId,
-      directory.name,
-      directory.path,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      new ServerFileList(
-        ...directory.children.map((c) => {
-          if (c.is_dir) {
-            return new ServerDirectory(
+      return new ServerDirectory(
+        serverId,
+        directory.name,
+        directory.path,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        new ServerFileList(
+          ...directory.children.map((c) => {
+            if (c.is_dir) {
+              return new ServerDirectory(
+                serverId,
+                c.name,
+                c.path,
+                new Date(c.modify_time * 1000),
+                new Date(c.create_time * 1000),
+                c.is_server_dir,
+                c.registered_server_id
+              );
+            }
+            return new ServerFile(
               serverId,
               c.name,
               c.path,
               new Date(c.modify_time * 1000),
               new Date(c.create_time * 1000),
-              c.is_server_dir,
-              c.registered_server_id
+              c.size
             );
-          }
-          return new ServerFile(
-            serverId,
-            c.name,
-            c.path,
-            new Date(c.modify_time * 1000),
-            new Date(c.create_time * 1000),
-            c.size
-          );
-        })
-      )
-    );
+          })
+        )
+      );
+    } catch (e) {
+      throw APIError.fromError(e);
+    }
   }
 
   /**
@@ -218,19 +243,23 @@ export class FileManager {
   async extract(outputDir: string, password?: string): Promise<number | boolean> {
     if (!this.type.equal(FileType.ARCHIVE)) return false;
 
-    const result = await axios.post(
-      `/server/${this.serverId}/file/archive/extract?path=${this.src}&output_dir=${outputDir}`,
-      {
-        password,
-      }
-    );
-    const { data }: { data: TaskResult } = result;
+    try {
+      const result = await axios.post(
+        `/server/${this.serverId}/file/archive/extract?path=${this.src}&output_dir=${outputDir}`,
+        {
+          password,
+        }
+      );
+      const { data }: { data: TaskResult } = result;
 
-    return data.result === 'success'
-      ? true
-      : data.result === 'pending'
-        ? result.data.task_id
-        : false;
+      return data.result === 'success'
+        ? true
+        : data.result === 'pending'
+          ? result.data.task_id
+          : false;
+    } catch (e) {
+      throw APIError.fromError(e);
+    }
   }
 
   /**
@@ -240,29 +269,33 @@ export class FileManager {
    * @returns ファイルまたはフォルダーの情報
    */
   static async getInfo(serverId: string, _path: string): Promise<ServerFile | ServerDirectory> {
-    const result = await axios.get(`/server/${serverId}/file/info?path=${_path}`);
-    const file: FileInfoResult = result.data;
+    try {
+      const result = await axios.get(`/server/${serverId}/file/info?path=${_path}`);
+      const file: FileInfoResult = result.data;
 
-    if (file.is_dir) {
-      return new ServerDirectory(
+      if (file.is_dir) {
+        return new ServerDirectory(
+          serverId,
+          file.name,
+          file.path,
+          new Date(file.modify_time * 1000),
+          new Date(file.create_time * 1000),
+          file.is_server_dir,
+          file.registered_server_id
+        );
+      }
+
+      return new ServerFile(
         serverId,
         file.name,
         file.path,
         new Date(file.modify_time * 1000),
         new Date(file.create_time * 1000),
-        file.is_server_dir,
-        file.registered_server_id
+        file.size
       );
+    } catch (e) {
+      throw APIError.fromError(e);
     }
-
-    return new ServerFile(
-      serverId,
-      file.name,
-      file.path,
-      new Date(file.modify_time * 1000),
-      new Date(file.create_time * 1000),
-      file.size
-    );
   }
 
   /**
@@ -277,14 +310,18 @@ export class FileManager {
   static async getStorageInfo(
     serverId?: string
   ): Promise<{ totalSize: number; usedSize: number; freeSize: number }> {
-    const result = await axios.get(`/storage/info${serverId ? `?server_id=${serverId}` : ''}`);
-    const { data } = result;
+    try {
+      const result = await axios.get(`/storage/info${serverId ? `?server_id=${serverId}` : ''}`);
+      const { data } = result;
 
-    return {
-      totalSize: data.total_size,
-      usedSize: data.used_size,
-      freeSize: data.free_size,
-    };
+      return {
+        totalSize: data.total_size,
+        usedSize: data.used_size,
+        freeSize: data.free_size,
+      };
+    } catch (e) {
+      throw APIError.fromError(e);
+    }
   }
 }
 
@@ -319,12 +356,16 @@ export class ServerDirectory extends FileManager {
    * @returns 作成に成功した場合はtrue、失敗した場合はfalse
    */
   async mkdir(name: string, parents: boolean = false): Promise<boolean> {
-    const result = await axios.post(
-      `/server/${this.serverId}/file/mkdir?path=${path.join(this.src, name)}${parents ? '&parents=true' : ''}`
-    );
-    const { data }: { data: TaskResult } = result;
+    try {
+      const result = await axios.post(
+        `/server/${this.serverId}/file/mkdir?path=${path.join(this.src, name)}${parents ? '&parents=true' : ''}`
+      );
+      const { data }: { data: TaskResult } = result;
 
-    return data.result === 'success';
+      return data.result === 'success';
+    } catch (e) {
+      throw APIError.fromError(e);
+    }
   }
 
   async uploadFile(file: File | FileWithPath): Promise<boolean> {
@@ -334,8 +375,12 @@ export class ServerDirectory extends FileManager {
     const name = 'path' in file ? file.path : file.name;
     const filePath = path.join(this.src, name);
 
-    const result = await axios.post(`/server/${this.serverId}/file?path=${filePath}`, formData);
-    return result.status === 200;
+    try {
+      const result = await axios.post(`/server/${this.serverId}/file?path=${filePath}`, formData);
+      return result.status === 200;
+    } catch (e) {
+      throw APIError.fromError(e);
+    }
   }
 }
 
@@ -354,17 +399,25 @@ export class ServerFile extends FileManager {
   }
 
   async getData(): Promise<Blob> {
-    const result = await axios.get(`/server/${this.serverId}/file?path=${this.src}`, {
-      responseType: 'blob',
-    });
-    return result.data;
+    try {
+      const result = await axios.get(`/server/${this.serverId}/file?path=${this.src}`, {
+        responseType: 'blob',
+      });
+      return result.data;
+    } catch (e) {
+      throw APIError.fromError(e);
+    }
   }
 
   async saveData(data: Blob): Promise<void> {
-    const formData = new FormData();
-    formData.append('file', data);
+    try {
+      const formData = new FormData();
+      formData.append('file', data);
 
-    await axios.post(`/server/${this.serverId}/file?path=${this.src}`, formData);
+      await axios.post(`/server/${this.serverId}/file?path=${this.src}`, formData);
+    } catch (e) {
+      throw APIError.fromError(e);
+    }
   }
 
   get extName(): string {

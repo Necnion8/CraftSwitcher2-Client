@@ -39,6 +39,7 @@ export function OverviewAnalyticsView() {
     })();
 
     const onPerformanceProgress = (data: PerformanceProgress) => {
+      console.log(data);
       setPerformance(data);
     };
     ws.addEventListener('PerformanceProgress', onPerformanceProgress);

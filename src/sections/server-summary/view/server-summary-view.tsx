@@ -43,11 +43,6 @@ export function ServerSummaryView() {
   const [server, setServer] = useState<Server | null>(null);
   const [state, setState] = useState<ServerState>(ServerState.UNKNOWN);
   const [performance, setPerformance] = useState<PerformanceProgress | null>(null);
-  const [serverPerformance, setServerPerformance] = useState<{
-    game: { ticks: number };
-    id: string;
-    jvm: { cpuUsage: number; memTotal: number; memUsed: number };
-  } | null>(null);
   const ws = useContext(WebSocketContext);
 
   useEffect(() => {
@@ -72,9 +67,6 @@ export function ServerSummaryView() {
     const onPerformanceProgress = (e: PerformanceProgress) => {
       setPerformance(e);
       const s = e.servers.find((sv) => sv.id === id);
-      if (s) {
-        setServerPerformance(s);
-      }
     };
 
     ws.addEventListener('ServerChangeState', onServerChangeState);

@@ -14,10 +14,8 @@ export default class User {
   ) {}
 
   static async login(username: string, password: string): Promise<boolean> {
-    let result;
-
     try {
-      result = await axios.post('/login', { username, password });
+      const result = await axios.post('/login', { username, password });
       return result.status === 200;
     } catch (e) {
       throw APIError.fromError(e);

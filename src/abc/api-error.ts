@@ -167,6 +167,8 @@ export class APIErrorCode {
 }
 
 export class APIError extends Error {
+  public code: APIErrorCode;
+
   constructor(
     code: APIErrorCode | number,
     public detail?: string
@@ -183,6 +185,8 @@ export class APIError extends Error {
     } else {
       throw new Error('Invalid APIErrorCode');
     }
+
+    this.code = _code;
   }
 
   static fromError(e: any) {

@@ -192,7 +192,7 @@ export default class Server {
       }
       
       const result = await axios.get(`/server/${this.id}/logs/latest?${params.toString()}`);
-    return result.data;
+      return result.data;
     } catch (e) {
       throw APIError.fromError(e);
     }

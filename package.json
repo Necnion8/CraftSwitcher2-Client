@@ -46,7 +46,8 @@
     "react-dropzone": "^14.2.9",
     "react-helmet-async": "^2.0.5",
     "react-router-dom": "^6.26.1",
-    "simplebar-react": "^3.2.6"
+    "simplebar-react": "^3.2.6",
+    "sonner": "^1.7.0"
   },
   "devDependencies": {
     "@types/path-browserify": "^1.0.3",

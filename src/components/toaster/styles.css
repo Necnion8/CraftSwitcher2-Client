@@ -1,0 +1,69 @@
+.toaster {
+    height: 60px;
+    padding: 4px 8px 4px;
+    border-radius: 10px;
+    color: var(--palette-text-primary);
+    font-family: "DM Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-size: 14px;
+}
+
+.toaster__description {
+    background-color: var(--palette-text-primary);
+    color: var(--palette-background-paper);
+    padding: 8px 8px 8px 12px;
+    border-color: rgba(var(--palette-grey-500Channel) / 0.16);;
+}
+
+.toaster__closeButton {
+    top: 0;
+    right: 0;
+    left: auto;
+    border: 1px solid rgba(var(--palette-grey-500Channel) / 0.16);;
+    transform: translate(-6px, 6px);
+}
+
+.toaster__default .toaster__closeButton {
+    background-color: var(--palette-text-primary)!important;
+    color: var(--palette-background-paper);
+    border-color: rgba(var(--palette-grey-500Channel) / 0.16);
+    transition: ease border 0.2s;
+}
+
+.toaster__default .toaster__closeButton:hover {
+    border-color: rgba(var(--palette-grey-200Channel) / 0.16);
+}
+
+.toaster__icon {
+    height: 48px;
+    width: 48px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 10px;
+}
+
+.toaster__icon .toaster__icon__svg {
+    height: 24px;
+    width: 24px;
+
+}
+
+.toaster__info .toaster__icon {
+    background-color: var(--palette-info-lighter);
+    color: var(--palette-info-main);
+}
+
+.toaster__success .toaster__icon {
+    background-color: var(--palette-success-light);
+    color: var(--palette-success-main);
+}
+
+.toaster__warning .toaster__icon {
+    background-color: var(--palette-warning-light);
+    color: var(--palette-warning-main);
+}
+
+.toaster__error .toaster__icon {
+    background-color: var(--palette-error-lighter);
+    color: var(--palette-error-main);
+}

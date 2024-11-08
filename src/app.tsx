@@ -8,6 +8,8 @@ import { useScrollToTop } from 'src/hooks/use-scroll-to-top';
 
 import { ThemeProvider } from 'src/theme/theme-provider';
 
+import { SonnerToaster } from 'src/components/toaster/toaster';
+
 // ----------------------------------------------------------------------
 
 export default function App() {
@@ -19,6 +21,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <Router />
+      <SonnerToaster />
     </ThemeProvider>
   );
 }

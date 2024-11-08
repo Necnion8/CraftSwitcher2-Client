@@ -195,4 +195,12 @@ export class APIError extends Error {
     }
     return e;
   }
+
+  static createToastMessage(e: any) {
+    if (e instanceof APIError) {
+      return e.code.description;
+    }
+    if (e.code === 'ERR_NETWORK') return 'サーバに接続できませんでした';
+    return '不明なエラーが発生しました';
+  }
 }

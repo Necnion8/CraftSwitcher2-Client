@@ -1,3 +1,6 @@
+import type { FormEvent } from 'react';
+
+import { toast } from 'sonner';
 import React, { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
@@ -12,6 +15,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import User from 'src/api/user';
 import { varAlpha } from 'src/theme/styles';
+import { APIError, APIErrorCode } from 'src/abc/api-error';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -20,7 +24,7 @@ import { Iconify } from 'src/components/iconify';
 export function LoginView() {
   const router = useRouter();
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -34,51 +38,60 @@ export function LoginView() {
 
   useEffect(() => {
     (async () => {
-      const isValid = await User.isValidSession();
-      if (isValid) {
-        router.push('/');
+      try {
+        const isValid = await User.isValidSession();
+        if (isValid) {
+          router.push('/');
+        }
+        setIsLoading(false);
+      } catch (e) {
+        toast.error(APIError.createToastMessage(e));
+        setIsLoading(false);
       }
-      setIsLoading(true);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleLogin = () => {
-    (async () => {
-      setIsLoading(false);
-      setUsernameError(false);
-      setPasswordError(false);
-      setInCorrectError(false);
-      setUnknownError(false);
+  const handleLogin = async (event: FormEvent) => {
+    event.preventDefault();
 
-      if (!username || !password) {
-        setUsernameError(!username);
-        setPasswordError(!password);
-        return;
+    setIsLoading(true);
+    setUsernameError(false);
+    setPasswordError(false);
+    setInCorrectError(false);
+    setUnknownError(false);
+
+    if (!username || !password) {
+      setUsernameError(!username);
+      setPasswordError(!password);
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const result = await User.login(username, password);
+      if (result) {
+        router.push('/');
       }
 
-      try {
-        const result = await User.login(username, password);
-        if (result) {
-          router.push('/');
+      setInCorrectError(true);
+    } catch (e) {
+      if (e instanceof APIError) {
+        if (e.code === APIErrorCode.INVALID_AUTHENTICATION_CREDENTIALS) {
+          setInCorrectError(true);
+        } else {
+          toast.error(e.code.description, { duration: Infinity });
         }
-
-        setInCorrectError(true);
-      } catch (e) {
+      } else {
         setUnknownError(true);
       }
-      setIsLoading(true);
-    })();
+    }
+    setIsLoading(false);
   };
 
   const renderForm = (
     <Box display="flex" flexDirection="column" alignItems="flex-end">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleLogin();
-        }}
-      >
+      <form onSubmit={handleLogin}>
         <TextField
           fullWidth
           name="username"
@@ -143,7 +156,7 @@ export function LoginView() {
         <Typography variant="h4">CraftSwitcher2</Typography>
       </Box>
       {renderForm}
-      {!isLoading && (
+      {isLoading && (
         <Box
           display="flex"
           alignItems="center"

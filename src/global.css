@@ -21,6 +21,9 @@
 /*xterm*/
 @import './components/xterm/styles.css';
 
+/*toaster*/
+@import './components/toaster/styles.css';
+
 /** **************************************
 * Baseline
 *************************************** */

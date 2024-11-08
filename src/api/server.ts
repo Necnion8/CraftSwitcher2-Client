@@ -180,6 +180,25 @@ export default class Server {
   }
 
   /**
+   * キャッシュされているサーバーログを取得します
+   */
+  async getLogsLatest(includeBuffer: boolean = false, maxLines: number | null = null): Promise<string[]> {
+    try {
+      const params = new URLSearchParams({
+        include_buffer: includeBuffer ? 'true' : 'false',
+      });
+      if (maxLines) {
+        params.set('max_lines', String(maxLines));
+      }
+      
+      const result = await axios.get(`/server/${this.id}/logs/latest?${params.toString()}`);
+    return result.data;
+    } catch (e) {
+      throw APIError.fromError(e);
+    }
+  }
+
+  /**
    * 構成済みのサーバーを登録します
    */
   async import(directory: string): Promise<boolean> {

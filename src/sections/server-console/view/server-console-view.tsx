@@ -1,6 +1,7 @@
 import type { Breakpoint } from '@mui/material/styles';
 import type { ServerChangeStateEvent } from 'src/websocket';
 
+import { toast } from 'sonner';
 import { useParams } from 'react-router-dom';
 import React, { useState, useEffect, useContext } from 'react';
 
@@ -19,6 +20,7 @@ import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgr
 import { RouterLink } from 'src/routes/components';
 
 import Server from 'src/api/server';
+import { APIError } from 'src/abc/api-error';
 import ServerState from 'src/abc/server-state';
 import { WebSocketContext } from 'src/websocket';
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -50,8 +52,7 @@ export function ServerConsoleView() {
         setServer(res!);
         setState(res!.state);
       } catch (e) {
-        // TODO: エラーハンドリング
-        console.error(e);
+        toast.error(APIError.createToastMessage(e));
       }
     })();
 

@@ -208,7 +208,6 @@ class _ServerType {
   ) {}
 }
 
-// TODO: アイコンを追加
 const SERVER_TYPE_SPECS: { [key: string]: _ServerType } = {
   unknown: new _ServerType('unknown', null, false, false),
   custom: new _ServerType('custom', null, false, false),

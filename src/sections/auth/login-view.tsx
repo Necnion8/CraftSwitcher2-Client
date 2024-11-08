@@ -79,11 +79,9 @@ export function LoginView() {
       if (e instanceof APIError) {
         if (e.code === APIErrorCode.INVALID_AUTHENTICATION_CREDENTIALS) {
           setInCorrectError(true);
-        } else {
-          toast.error(e.code.description, { duration: Infinity });
         }
       } else {
-        setUnknownError(true);
+        toast.error(APIError.createToastMessage(e));
       }
     }
     setIsLoading(false);

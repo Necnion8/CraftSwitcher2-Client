@@ -1,5 +1,6 @@
 import type { FormEvent } from 'react';
 
+import { toast } from 'sonner';
 import React, { useState } from 'react';
 
 import Button from '@mui/material/Button';
@@ -9,6 +10,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import { Dialog, DialogTitle, DialogActions, DialogContent } from '@mui/material';
 
 import User from 'src/api/user';
+import { APIError } from 'src/abc/api-error';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -38,16 +40,16 @@ export function UserCreateDialog({ open, setOpen, reloadUsers }: Props) {
     e.preventDefault();
     handleClose();
 
-    const res = await User.add(username, password);
-    if (res) {
-      reloadUsers();
+    try {
+      const res = await User.add(username, password);
+      if (res) {
+        reloadUsers();
+      } else {
+        toast.error(`ユーザの作成に失敗しました`);
+      }
+    } catch (err) {
+      toast.error(`ユーザの作成に失敗しました: ${APIError.createToastMessage(err)}`);
     }
-
-    setTimeout(() => {
-      setUsername('');
-      setPassword('');
-      setShowPassword(false);
-    }, 200);
   };
 
   return (

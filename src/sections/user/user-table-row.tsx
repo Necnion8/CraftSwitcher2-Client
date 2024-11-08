@@ -1,6 +1,7 @@
 import type User from 'src/api/user';
 import type { FormEvent } from 'react';
 
+import { toast } from 'sonner';
 import React, { useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -17,6 +18,8 @@ import { Dialog, DialogTitle, DialogActions } from '@mui/material';
 import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 
 import { fDateTime } from 'src/utils/format-time';
+
+import { APIError } from 'src/abc/api-error';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -52,8 +55,12 @@ export function UserTableRow({ user, selected, onSelectRow, reloadUsers }: UserT
     e.preventDefault();
     handleRemoveClose();
 
-    const res = await user.remove();
-    if (res) reloadUsers();
+    try {
+      const res = await user.remove();
+      if (res) reloadUsers();
+    } catch (err) {
+      toast.error(`ディレクトリの取得に失敗しました: ${APIError.createToastMessage(err)}`);
+    }
   };
 
   return (

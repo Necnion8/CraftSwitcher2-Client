@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -8,7 +9,6 @@ import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import Checkbox from '@mui/material/Checkbox';
-import Snackbar from '@mui/material/Snackbar';
 import Grid from '@mui/material/Unstable_Grid2';
 import TextField from '@mui/material/TextField';
 import { useTheme } from '@mui/material/styles';
@@ -21,6 +21,7 @@ import { RouterLink } from 'src/routes/components';
 
 import Server from 'src/api/server';
 import ServerType from 'src/abc/server-type';
+import { APIError } from 'src/abc/api-error';
 import { ServerGlobalConfig } from 'src/api/config';
 
 import { Iconify } from 'src/components/iconify';
@@ -60,8 +61,6 @@ export default function ServerCreateNew({ setPage }: { setPage: (page: number) =
   const [directoryEmptyError, setDirectoryEmptyError] = useState(false);
   const [maxHeapMemoryError, setMaxHeapMemoryError] = useState(false);
   const [minHeapMemoryError, setMinHeapMemoryError] = useState(false);
-  const [buildError, setBuildError] = useState(false);
-  const [serverError, setServerError] = useState(false);
 
   // user changed
   const [modifiedDirectory, setModifiedDirectory] = useState(false);
@@ -70,16 +69,25 @@ export default function ServerCreateNew({ setPage }: { setPage: (page: number) =
 
   useState(() => {
     (async () => {
-      const res = await ServerType.availableTypes();
-      setAvailableTypes(res.reverse());
+      try {
+        const res = await ServerType.availableTypes();
+        setAvailableTypes(res.reverse());
+      } catch (e) {
+        toast.error(APIError.createToastMessage(e));
+      }
     })();
   });
 
   const handleSetType = async (t: ServerType) => {
     setType(t);
 
-    const res = await t.getVersions();
-    setAvailableVersions(res.reverse());
+    try {
+      const res = await t.getVersions();
+      setAvailableVersions(res.reverse());
+    } catch (e) {
+      toast.error(APIError.createToastMessage(e));
+      return;
+    }
 
     setActiveStep(1);
   };
@@ -87,14 +95,19 @@ export default function ServerCreateNew({ setPage }: { setPage: (page: number) =
   const handleSetVersion = async (v: string) => {
     setVersion(v);
 
-    const res = await ServerGlobalConfig.get();
-    setJavaExecutable(res.javaExecutable);
-    setJavaOptions(res.javaOptions);
-    setServerOptions(res.serverOptions);
-    setMaxHeapMemory(res.maxHeapMemory);
-    setMinHeapMemory(res.minHeapMemory);
-    setEnableFreeMemoryCheck(res.enableFreeMemoryCheck);
-    setEnableReporterAgent(res.enableReporterAgent);
+    try {
+      const res = await ServerGlobalConfig.get();
+      setJavaExecutable(res.javaExecutable);
+      setJavaOptions(res.javaOptions);
+      setServerOptions(res.serverOptions);
+      setMaxHeapMemory(res.maxHeapMemory);
+      setMinHeapMemory(res.minHeapMemory);
+      setEnableFreeMemoryCheck(res.enableFreeMemoryCheck);
+      setEnableReporterAgent(res.enableReporterAgent);
+    } catch (e) {
+      toast.error(APIError.createToastMessage(e));
+      return;
+    }
 
     setActiveStep(2);
   };
@@ -104,8 +117,6 @@ export default function ServerCreateNew({ setPage }: { setPage: (page: number) =
     setDirectoryEmptyError(false);
     setMaxHeapMemoryError(false);
     setMinHeapMemoryError(false);
-    setBuildError(false);
-    setBuildError(false);
 
     if (
       !name ||
@@ -142,12 +153,11 @@ export default function ServerCreateNew({ setPage }: { setPage: (page: number) =
         shutdownTimeout,
       });
       if (!server) {
-        setBuildError(true);
+        toast.error('サーバーの作成に失敗しました');
         return;
       }
     } catch (e) {
-      console.log(e);
-      setServerError(true);
+      toast.error(`サーバーの作成に失敗しました: ${APIError.createToastMessage(e)}`);
       return;
     }
 
@@ -156,17 +166,16 @@ export default function ServerCreateNew({ setPage }: { setPage: (page: number) =
       const latestBuild = builds[builds.length - 1];
       await server.install(type!, version, latestBuild.build);
     } catch (e) {
-      /* empty */
+      toast.error(`サーバーのインストールに失敗しました: ${APIError.createToastMessage(e)}`);
     }
+
     try {
       await server.setEula(agreeToEula);
     } catch (e) {
-      /* empty */
+      toast.error(`EULAファイル作成に失敗しました: ${APIError.createToastMessage(e)}`);
     }
 
     setActiveStep(3);
-
-    // TODO: エラーハンドリング
   };
 
   return (
@@ -273,7 +282,9 @@ export default function ServerCreateNew({ setPage }: { setPage: (page: number) =
                 onChange={(e) => {
                   setName(e.target.value);
                   if (!modifiedDirectory) {
-                    setDirectory(e.target.value.replaceAll(/[\\/:*?"<>|]/g, "_").replaceAll(/_+/g, "_"));
+                    setDirectory(
+                      e.target.value.replaceAll(/[\\/:*?"<>|]/g, '_').replaceAll(/_+/g, '_')
+                    );
                   }
                 }}
                 error={nameEmptyError}
@@ -490,27 +501,6 @@ export default function ServerCreateNew({ setPage }: { setPage: (page: number) =
           </Button>
         </Stack>
       )}
-
-      <Snackbar
-        open={buildError}
-        autoHideDuration={5000}
-        onClose={() => setBuildError(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert severity="error" variant="filled">
-          失敗しました。
-        </Alert>
-      </Snackbar>
-      <Snackbar
-        open={serverError}
-        autoHideDuration={5000}
-        onClose={() => setServerError(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert severity="error" variant="filled">
-          サーバーに接続できませんでした
-        </Alert>
-      </Snackbar>
     </>
   );
 }

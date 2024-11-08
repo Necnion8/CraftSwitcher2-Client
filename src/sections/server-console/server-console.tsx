@@ -2,6 +2,7 @@ import type Server from 'src/api/server';
 import type ServerState from 'src/abc/server-state';
 import type { WebSocketClient, ServerProcessReadEvent } from 'src/websocket';
 
+import { toast } from 'sonner';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebglAddon } from '@xterm/addon-webgl';
@@ -10,6 +11,8 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import { alpha } from '@mui/material';
 import Typography from '@mui/material/Typography';
+
+import { APIError } from 'src/abc/api-error';
 
 export default function ServerConsole({
   server,
@@ -41,12 +44,17 @@ export default function ServerConsole({
     term.open(ref.current!);
     fitAddon.fit();
 
-    server.getLogsLatest(true).then(lines => {
-      while (lines.length > 1) {
-        term.writeln(lines.shift()!);
+    (async () => {
+      try {
+        const lines = await server.getLogsLatest(true);
+        while (lines.length > 1) {
+          term.writeln(lines.shift()!);
+          term.write(lines.shift()!);
+        }
+      } catch (e) {
+        toast.error(APIError.createToastMessage(e));
       }
-      term.write(lines.shift()!);
-    });
+    })();
 
     const observer = new ResizeObserver((entries) => {
       entries.forEach(() => {

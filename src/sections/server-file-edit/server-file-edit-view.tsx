@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { Editor } from '@monaco-editor/react';
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
@@ -10,6 +11,7 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
 
+import { APIError } from 'src/abc/api-error';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { ServerFile, FileManager } from 'src/api/file-manager';
 
@@ -29,7 +31,8 @@ export function ServerFileEditView() {
   const [isReadonly, setIsReadonly] = useState(false);
 
   const handleChange = (value: string | undefined) => {
-    if (isReadonly) return;  /* setIsReadonly(true) で changed フラグが立ってしまうので代わりにここで防ぐ */
+    if (isReadonly)
+      return; /* setIsReadonly(true) で changed フラグが立ってしまうので代わりにここで防ぐ */
     setIsChanged(true);
     setContent(value!);
   };
@@ -40,8 +43,12 @@ export function ServerFileEditView() {
 
     const _blob = new Blob([content], { type: blob!.type });
 
-    await file.saveData(_blob);
-    setIsChanged(false);
+    try {
+      await file.saveData(_blob);
+      setIsChanged(false);
+    } catch (e) {
+      toast.error(`ファイルの保存に失敗しました: ${APIError.createToastMessage(e)}`);
+    }
   }, [blob, content, file, isReadonly]);
 
   const handleCtrlS = useCallback(
@@ -62,25 +69,31 @@ export function ServerFileEditView() {
 
       const path = params.get('path')!;
 
-      const fileInfo = await FileManager.getInfo(id, path);
-      if (!(fileInfo instanceof ServerFile)) return;
+      try {
+        const fileInfo = await FileManager.getInfo(id, path);
+        if (!(fileInfo instanceof ServerFile)) return;
 
-      const _file = fileInfo as ServerFile;
-      setFile(_file);
+        const _file = fileInfo as ServerFile;
+        setFile(_file);
 
-      let data = await _file.getData();
-      if (_file.name.endsWith(".gz")) {
-        setIsReadonly(true);  /* なぜか onChange が呼ばれる */
-        try {
-          // using Compression Streams API
-          data = await (new Response(data.stream().pipeThrough(new DecompressionStream("gzip")))).blob();
-        } catch (e) {
-          console.error(e);
+        let data = await _file.getData();
+        if (_file.name.endsWith('.gz')) {
+          setIsReadonly(true); /* なぜか onChange が呼ばれる */
+          try {
+            // using Compression Streams API
+            data = await new Response(
+              data.stream().pipeThrough(new DecompressionStream('gzip'))
+            ).blob();
+          } catch (e) {
+            toast.error(`gzipファイルの読み込みに失敗しました`);
+          }
         }
-      }
-      setBlob(data);
+        setBlob(data);
 
-      setContent(await data.text());
+        setContent(await data.text());
+      } catch (e) {
+        toast.error(`ファイルの読み込みに失敗しました: ${APIError.createToastMessage(e)}`);
+      }
     })();
   }, [id, params]);
 

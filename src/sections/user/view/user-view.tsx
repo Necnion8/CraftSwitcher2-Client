@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import React, { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -9,6 +10,7 @@ import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 
 import User from 'src/api/user';
+import { APIError } from 'src/abc/api-error';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
@@ -18,6 +20,8 @@ import { UserTableRow } from '../user-table-row';
 import { UserTableHead } from '../user-table-head';
 import { UserCreateDialog } from '../user-create-dialog';
 import { TableLoading } from '../../server/table-loading';
+
+// ----------------------------------------------------------------------
 
 export function UserView() {
   const table = useTable();
@@ -35,6 +39,7 @@ export function UserView() {
       setUsers(result);
     } catch (e) {
       setUnableToLoad(true);
+      toast.error(`ディレクトリの取得に失敗しました: ${APIError.createToastMessage(e)}`);
     }
   }, []);
 

@@ -1,6 +1,7 @@
 import type { FileWithPath } from 'react-dropzone';
 import type { ServerDirectory } from 'src/api/file-manager';
 
+import { toast } from 'sonner';
 import path from 'path-browserify';
 import React, { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
@@ -49,8 +50,6 @@ export default function FileDropZone({ isActive, setIsActive, directory, reloadF
         }
       });
 
-      console.log(uniqueDirs);
-
       await Promise.all(
         uniqueDirs.map(async (dir) => {
           await directory.mkdir(dir, true);
@@ -61,13 +60,18 @@ export default function FileDropZone({ isActive, setIsActive, directory, reloadF
       let error = 0;
       await Promise.all(
         acceptedFiles.map(async (file) => {
-          const res = await directory.uploadFile(file);
-          if (!res) error += 1;
+          try {
+            const res = await directory.uploadFile(file);
+            if (!res) error += 1;
+          } catch (err) {
+            error += 1;
+          }
         })
       );
 
+      // TODO: エラー時のメッセージ要検討
       if (error) {
-        // TODO: エラーハンドリング
+        toast.error(`${error}件のファイルのアップロードに失敗しました`);
       }
 
       setIsActive(false);

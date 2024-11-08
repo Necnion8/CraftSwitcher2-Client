@@ -1,9 +1,11 @@
 import React from 'react';
+import { toast } from 'sonner';
 
 import Fab from '@mui/material/Fab';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 
+import { APIError } from 'src/abc/api-error';
 import ServerState from 'src/abc/server-state';
 
 import { Iconify } from 'src/components/iconify';
@@ -31,17 +33,37 @@ export const ServerProcessButton = ({ server, state, ...other }: ServerProcessBu
     ServerState.UNKNOWN.name,
   ].includes(_state.name);
 
-  // TODO: エラーハンドリング
   const handleStart = async () => {
-    const res = await server?.start();
+    try {
+      const res = await server?.start();
+      if (res!) {
+        toast.error(`サーバーを起動に失敗しました`);
+      }
+    } catch (e) {
+      toast.error(`サーバーの起動に失敗しました: ${APIError.createToastMessage(e)}`);
+    }
   };
 
   const handleStop = async () => {
-    const res = await server?.stop();
+    try {
+      const res = await server?.stop();
+      if (res!) {
+        toast.error(`サーバーを停止に失敗しました`);
+      }
+    } catch (e) {
+      toast.error(`サーバーの停止に失敗しました: ${APIError.createToastMessage(e)}`);
+    }
   };
 
   const handleRestart = async () => {
-    const res = await server?.restart();
+    try {
+      const res = await server?.restart();
+      if (res!) {
+        toast.error(`サーバーを再起動に失敗しました`);
+      }
+    } catch (e) {
+      toast.error(`サーバーの再起動に失敗しました: ${APIError.createToastMessage(e)}`);
+    }
   };
 
   return (

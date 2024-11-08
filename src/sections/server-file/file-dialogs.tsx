@@ -1,6 +1,7 @@
 import type { FileTaskEvent, WebSocketClient } from 'src/websocket';
 import type { FileManager, ServerDirectory } from 'src/api/file-manager';
 
+import { toast } from 'sonner';
 import React, { type FormEvent } from 'react';
 
 import Grid from '@mui/material/Grid';
@@ -13,6 +14,7 @@ import { Dialog, DialogTitle, DialogActions, DialogContent } from '@mui/material
 import { fDateTime } from 'src/utils/format-time';
 
 import FileType from 'src/abc/file-type';
+import { APIError } from 'src/abc/api-error';
 import { ServerFileList } from 'src/api/file-manager';
 
 import { Iconify } from 'src/components/iconify';
@@ -85,22 +87,26 @@ export default function FileDialogs({
     }
 
     setRenameOpen(false);
-    const res = await selected[0].rename(renameValue);
+    try {
+      const res = await selected[0].rename(renameValue);
+      if (!res) {
+        toast.error(`ファイル名の変更に失敗しました`);
+      }
 
-    if (typeof res === 'number') {
-      const fileTaskEndEvent = (fileTaskEvent: FileTaskEvent) => {
-        if (fileTaskEvent.taskId === res) {
-          reloadFiles();
-          ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
-        }
-      };
-      ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
-      return;
+      if (typeof res === 'number') {
+        const fileTaskEndEvent = (fileTaskEvent: FileTaskEvent) => {
+          if (fileTaskEvent.taskId === res) {
+            reloadFiles();
+            ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
+          }
+        };
+        ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
+        return;
+      }
+      reloadFiles();
+    } catch (err) {
+      toast.error(`ファイル名の変更に失敗しました: ${APIError.createToastMessage(err)}`);
     }
-    if (!res) {
-      // TODO: エラーハンドリング
-    }
-    reloadFiles();
   };
 
   const handleRemove = async (e: FormEvent) => {
@@ -114,28 +120,32 @@ export default function FileDialogs({
     let done = 0;
     await Promise.all(
       selected.map(async (file) => {
-        const res = await file.remove();
-        if (typeof res === 'number') {
-          const fileTaskEndEvent = (fileTaskEvent: FileTaskEvent) => {
-            if (fileTaskEvent.src === file.src) {
-              done += 1;
-              ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
-            }
-          };
-          ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
-          return;
-        }
-        if (!res) {
+        try {
+          const res = await file.remove();
+          if (typeof res === 'number') {
+            const fileTaskEndEvent = (fileTaskEvent: FileTaskEvent) => {
+              if (fileTaskEvent.src === file.src) {
+                done += 1;
+                ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
+              }
+            };
+            ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
+            return;
+          }
+          if (!res) {
+            error += 1;
+          }
+          done += 1;
+        } catch (err) {
           error += 1;
         }
-        done += 1;
       })
     );
 
+    // TODO: エラー時のメッセージ要検討
     if (error) {
-      /* empty */
+      toast.error(`${error}件の削除に失敗しました`);
     }
-    // TODO: エラーハンドリング
 
     let i = 1;
 
@@ -160,20 +170,24 @@ export default function FileDialogs({
 
     const archiveFiles = new ServerFileList(...selected);
 
-    const res = await archiveFiles.createArchiveFile(
-      archiveFileName,
-      directory?.src!,
-      directory?.src!
-    );
-    setArchiveOpen(false);
+    try {
+      const res = await archiveFiles.createArchiveFile(
+        archiveFileName,
+        directory?.src!,
+        directory?.src!
+      );
+      setArchiveOpen(false);
 
-    const fileTaskEndEvent = (fileTaskEvent: FileTaskEvent) => {
-      if (fileTaskEvent.taskId === res) {
-        reloadFiles();
-        ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
-      }
-    };
-    ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
+      const fileTaskEndEvent = (fileTaskEvent: FileTaskEvent) => {
+        if (fileTaskEvent.taskId === res) {
+          reloadFiles();
+          ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
+        }
+      };
+      ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
+    } catch (err) {
+      toast.error(`アーカイブファイルの作成に失敗しました: ${APIError.createToastMessage(err)}`);
+    }
   };
 
   const handleMkdir = async (e: FormEvent) => {
@@ -183,11 +197,19 @@ export default function FileDialogs({
       return;
     }
 
-    const res = await directory?.mkdir(mkdirValue);
-    setMkdirOpen(false);
-    setMkdirValue('');
+    try {
+      const res = await directory?.mkdir(mkdirValue);
+      setMkdirOpen(false);
+      setMkdirValue('');
 
-    if (res) reloadFiles();
+      if (!res) {
+        toast.error(`フォルダの作成に失敗しました`);
+        return;
+      }
+      reloadFiles();
+    } catch (err) {
+      toast.error(`フォルダの作成に失敗しました: ${APIError.createToastMessage(e)}`);
+    }
   };
 
   return (

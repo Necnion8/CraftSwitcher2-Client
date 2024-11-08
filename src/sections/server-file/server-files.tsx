@@ -2,6 +2,7 @@ import type Server from 'src/api/server';
 import type { FileManager } from 'src/api/file-manager';
 import type { FileTaskEvent, WebSocketClient } from 'src/websocket';
 
+import { toast } from 'sonner';
 import { useSearchParams } from 'react-router-dom';
 import React, { useState, useEffect, useCallback } from 'react';
 
@@ -10,6 +11,7 @@ import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableContainer from '@mui/material/TableContainer';
 
+import { APIError, APIErrorCode } from 'src/abc/api-error';
 import { ServerFile, ServerFileList, ServerDirectory } from 'src/api/file-manager';
 
 import { Scrollbar } from 'src/components/scrollbar';
@@ -83,11 +85,11 @@ export default function ServerFiles({ server, ws }: Props) {
       setDirectory(info);
       setFiles(await info.children());
     } catch (e) {
-      if (e.status === 404) {
+      if (e instanceof APIError && e.code === APIErrorCode.NOT_EXISTS_DIRECTORY) {
         setIsInValidPath(true);
         return;
       }
-      throw e;
+      toast.error(`ディレクトリの取得に失敗しました: ${APIError.createToastMessage(e)}`);
     }
   }, [params, server]);
 
@@ -216,10 +218,11 @@ export default function ServerFiles({ server, ws }: Props) {
       })
     );
 
+    // TODO: エラー時のメッセージ要検討
     if (error) {
-      /* empty */
+      toast.error(`${error}件のファイルの貼り付けに失敗しました`);
     }
-    // TODO: エラーハンドリング
+
     let i = 0;
     const interval = setInterval(() => {
       if (done === currentFiles.length || i > 120) {
@@ -252,25 +255,28 @@ export default function ServerFiles({ server, ws }: Props) {
   const handleExtract = useCallback(async () => {
     handleCloseMenu();
     const file = table.selected[0] as ServerFile;
-    const res = await file.extract(file.fileName);
-    if (typeof res === 'number') {
-      const fileTaskEndEvent = (e: FileTaskEvent) => {
-        if (e.src === file.src) {
-          if (e.result !== 'success') {
-            /* empty */
-            // TODO: エラーハンドリング
+    try {
+      const res = await file.extract(file.fileName);
+      if (typeof res === 'number') {
+        const fileTaskEndEvent = (e: FileTaskEvent) => {
+          if (e.src === file.src) {
+            if (e.result !== 'success') {
+              toast.error(`アーカイブファイル作成に失敗しました`);
+            }
+            reloadFiles();
+            ws.removeEventListener('FileTaskEnd', fileTaskEndEvent);
           }
-          reloadFiles();
-          ws.removeEventListener('FileTaskEnd', fileTaskEndEvent);
-        }
-      };
-      ws.addEventListener('FileTaskEnd', fileTaskEndEvent);
-      return;
+        };
+        ws.addEventListener('FileTaskEnd', fileTaskEndEvent);
+        return;
+      }
+      if (!res) {
+        toast.error(`アーカイブファイル作成に失敗しました`);
+      }
+      reloadFiles();
+    } catch (e) {
+      toast.error(`アーカイブファイル作成に失敗しました: ${APIError.createToastMessage(e)}`);
     }
-    if (!res) {
-      /* empty */
-    }
-    reloadFiles();
   }, [reloadFiles, table.selected, ws]);
 
   // イベント系

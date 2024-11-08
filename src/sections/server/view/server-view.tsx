@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useContext, useCallback } from 'react';
 
@@ -10,6 +11,7 @@ import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 
 import Server from 'src/api/server';
+import { APIError } from 'src/abc/api-error';
 import { WebSocketContext } from 'src/websocket';
 import { DashboardContent } from 'src/layouts/dashboard';
 
@@ -36,19 +38,19 @@ export function ServerView() {
 
   const notFound = !servers.length;
 
-  const getServers = async () => {
+  const reloadServers = async () => {
     try {
       setServers(await Server.all());
     } catch (e) {
       setUnableToLoad(true);
-      return;
+      toast.error(`サーバの取得に失敗しました: ${APIError.createToastMessage(e)}`);
     }
 
     setIsLoading(false);
   };
 
   useEffect(() => {
-    getServers();
+    reloadServers();
   }, []);
 
   return (
@@ -101,7 +103,7 @@ export function ServerView() {
                     ws={ws}
                     selected={table.selected.includes(server.id)}
                     onSelectRow={() => table.onSelectRow(server.id)}
-                    reloadServers={getServers}
+                    reloadServers={reloadServers}
                   />
                 ))}
 

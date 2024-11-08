@@ -54,12 +54,12 @@
 }
 
 .toaster__success .toaster__icon {
-    background-color: var(--palette-success-light);
+    background-color: var(--palette-success-lighter);
     color: var(--palette-success-main);
 }
 
 .toaster__warning .toaster__icon {
-    background-color: var(--palette-warning-light);
+    background-color: var(--palette-warning-lighter);
     color: var(--palette-warning-main);
 }
 

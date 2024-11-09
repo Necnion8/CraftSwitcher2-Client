@@ -27,42 +27,45 @@ export const ServerProcessButton = ({ server, state, ...other }: ServerProcessBu
   ].includes(_state.name);
   const stopDisabled = [
     ServerState.STOPPED.name,
-    ServerState.UNKNOWN.name,
-    ServerState.STOPPED.name,
+    ServerState.STARTING.name,
+    ServerState.STOPPING.name,
     ServerState.BUILD.name,
     ServerState.UNKNOWN.name,
   ].includes(_state.name);
 
   const handleStart = async () => {
+    if (!server) return;
     try {
-      const res = await server?.start();
-      if (res!) {
+      const res = await server.start();
+      if (!res) {
         toast.error(`サーバーを起動に失敗しました`);
       }
     } catch (e) {
-      toast.error(`サーバーの起動に失敗しました: ${APIError.createToastMessage(e)}`);
+      toast.error(APIError.createToastMessage(e));
     }
   };
 
   const handleStop = async () => {
+    if (!server) return;
     try {
-      const res = await server?.stop();
-      if (res!) {
+      const res = await server.stop();
+      if (!res) {
         toast.error(`サーバーを停止に失敗しました`);
       }
     } catch (e) {
-      toast.error(`サーバーの停止に失敗しました: ${APIError.createToastMessage(e)}`);
+      toast.error(APIError.createToastMessage(e));
     }
   };
 
   const handleRestart = async () => {
+    if (!server) return;
     try {
-      const res = await server?.restart();
-      if (res!) {
+      const res = await server.restart();
+      if (!res) {
         toast.error(`サーバーを再起動に失敗しました`);
       }
     } catch (e) {
-      toast.error(`サーバーの再起動に失敗しました: ${APIError.createToastMessage(e)}`);
+      toast.error(APIError.createToastMessage(e));
     }
   };
 

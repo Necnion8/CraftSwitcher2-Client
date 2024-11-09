@@ -25,9 +25,9 @@ export function SonnerToaster() {
         },
       }}
       closeButton
-      expand
-      gap={30}
+      gap={12}
       offset={20}
+      duration={5000}
     />
   );
 }

@@ -262,7 +262,7 @@ export default function ServerFiles({ server, ws }: Props) {
         const fileTaskEndEvent = (e: FileTaskEvent) => {
           if (e.src === file.src) {
             if (e.result !== 'success') {
-              toast.error(`アーカイブファイル作成に失敗しました`);
+              toast.error(`圧縮ファイル作成に失敗しました`);
             }
             reloadFiles();
             ws.removeEventListener('FileTaskEnd', fileTaskEndEvent);
@@ -272,12 +272,12 @@ export default function ServerFiles({ server, ws }: Props) {
         return;
       }
       if (!res) {
-        toast.error(`アーカイブファイル作成に失敗しました`);
+        toast.error(`圧縮ファイル作成に失敗しました`);
       }
       reloadFiles();
-      toast.success('アーカイブファイルを作成しました');
+      toast.success('圧縮ファイルを作成しました');
     } catch (e) {
-      toast.error(`アーカイブファイル作成に失敗しました: ${APIError.createToastMessage(e)}`);
+      toast.error(`圧縮ファイル作成に失敗しました: ${APIError.createToastMessage(e)}`);
     }
   }, [reloadFiles, table.selected, ws]);
 

@@ -497,7 +497,7 @@ export default function ServerCreateNew({ setPage }: { setPage: (page: number) =
           />
           <Typography variant="h4">サーバーを作成しました</Typography>
           <Button color="inherit" variant="contained" component={RouterLink} href="../">
-            サーバ一覧へ
+            サーバーリストへ
           </Button>
         </Stack>
       )}

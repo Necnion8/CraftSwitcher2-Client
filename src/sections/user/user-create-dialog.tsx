@@ -45,10 +45,10 @@ export function UserCreateDialog({ open, setOpen, reloadUsers }: Props) {
       if (res) {
         reloadUsers();
       } else {
-        toast.error(`ユーザの作成に失敗しました`);
+        toast.error(`ユーザーの作成に失敗しました`);
       }
     } catch (err) {
-      toast.error(`ユーザの作成に失敗しました: ${APIError.createToastMessage(err)}`);
+      toast.error(`ユーザーの作成に失敗しました: ${APIError.createToastMessage(err)}`);
     }
   };
 

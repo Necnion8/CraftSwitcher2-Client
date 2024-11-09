@@ -183,13 +183,13 @@ export default function FileDialogs({
       const fileTaskEndEvent = (fileTaskEvent: FileTaskEvent) => {
         if (fileTaskEvent.taskId === res) {
           reloadFiles();
-          toast.success('アーカイブファイルを作成しました');
+          toast.success('圧縮ファイルを作成しました');
           ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
         }
       };
       ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
     } catch (err) {
-      toast.error(`アーカイブファイルの作成に失敗しました: ${APIError.createToastMessage(err)}`);
+      toast.error(`圧縮ファイルの作成に失敗しました: ${APIError.createToastMessage(err)}`);
     }
   };
 
@@ -209,7 +209,7 @@ export default function FileDialogs({
         return;
       }
       reloadFiles();
-      toast.success('フォルダを作成しました');
+      toast.error('フォルダを作成しました');
     } catch (err) {
       toast.error(`フォルダの作成に失敗しました: ${APIError.createToastMessage(err)}`);
     }

@@ -49,21 +49,21 @@
 }
 
 .toaster__info .toaster__icon {
-    background-color: var(--palette-info-lighter);
+    background-color: rgba(var(--palette-info-mainChannel) / 0.16);
     color: var(--palette-info-main);
 }
 
 .toaster__success .toaster__icon {
-    background-color: var(--palette-success-lighter);
+    background-color: rgba(var(--palette-success-mainChannel) / 0.16);
     color: var(--palette-success-main);
 }
 
 .toaster__warning .toaster__icon {
-    background-color: var(--palette-warning-lighter);
+    background-color: rgba(var(--palette-warning-mainChannel) / 0.16);
     color: var(--palette-warning-main);
 }
 
 .toaster__error .toaster__icon {
-    background-color: var(--palette-error-lighter);
+    background-color: rgba(var(--palette-error-mainChannel) / 0.16);
     color: var(--palette-error-main);
 }

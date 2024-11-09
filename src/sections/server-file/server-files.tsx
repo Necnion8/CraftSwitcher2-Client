@@ -227,6 +227,7 @@ export default function ServerFiles({ server, ws }: Props) {
     const interval = setInterval(() => {
       if (done === currentFiles.length || i > 120) {
         reloadFiles();
+        if (!error) toast.success('ファイルを貼り付けしました');
         clearInterval(interval);
       }
       i += 1;
@@ -274,6 +275,7 @@ export default function ServerFiles({ server, ws }: Props) {
         toast.error(`アーカイブファイル作成に失敗しました`);
       }
       reloadFiles();
+      toast.success('アーカイブファイルを作成しました');
     } catch (e) {
       toast.error(`アーカイブファイル作成に失敗しました: ${APIError.createToastMessage(e)}`);
     }

@@ -104,6 +104,7 @@ export default function FileDialogs({
         return;
       }
       reloadFiles();
+      toast.success('ファイル名を変更しました');
     } catch (err) {
       toast.error(`ファイル名の変更に失敗しました: ${APIError.createToastMessage(err)}`);
     }
@@ -152,6 +153,7 @@ export default function FileDialogs({
     const checkDone = () => {
       if (done === length || i > 40) {
         reloadFiles();
+        toast.success('ファイルを削除しました');
         clearInterval(interval);
       }
 
@@ -181,6 +183,7 @@ export default function FileDialogs({
       const fileTaskEndEvent = (fileTaskEvent: FileTaskEvent) => {
         if (fileTaskEvent.taskId === res) {
           reloadFiles();
+          toast.success('アーカイブファイルを作成しました');
           ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
         }
       };
@@ -200,15 +203,15 @@ export default function FileDialogs({
     try {
       const res = await directory?.mkdir(mkdirValue);
       setMkdirOpen(false);
-      setMkdirValue('');
 
       if (!res) {
         toast.error(`フォルダの作成に失敗しました`);
         return;
       }
       reloadFiles();
+      toast.success('フォルダを作成しました');
     } catch (err) {
-      toast.error(`フォルダの作成に失敗しました: ${APIError.createToastMessage(e)}`);
+      toast.error(`フォルダの作成に失敗しました: ${APIError.createToastMessage(err)}`);
     }
   };
 

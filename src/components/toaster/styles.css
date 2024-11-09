@@ -42,7 +42,7 @@
     border-radius: 10px;
 }
 
-.toaster__icon .toaster__icon__svg {
+.toaster__icon svg {
     height: 24px;
     width: 24px;
 

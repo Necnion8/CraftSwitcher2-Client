@@ -72,6 +72,8 @@ export default function FileDropZone({ isActive, setIsActive, directory, reloadF
       // TODO: エラー時のメッセージ要検討
       if (error) {
         toast.error(`${error}件のファイルのアップロードに失敗しました`);
+      } else {
+        toast.success('ファイルをアップロードしました');
       }
 
       setIsActive(false);

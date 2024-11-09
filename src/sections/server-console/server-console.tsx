@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebglAddon } from '@xterm/addon-webgl';
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import { alpha } from '@mui/material';
@@ -24,22 +24,17 @@ export default function ServerConsole({
   ws: WebSocketClient;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
-  const [term] = useState<Terminal>(new Terminal());
+  const [term] = useState(new Terminal());
   const [fitAddon] = useState(new FitAddon());
   const [webglAddon] = useState(new WebglAddon());
-
-  const handleSendLine = useCallback(
-    (data: string) => {
-      if (!state.isRunning) return;
-      ws.sendLine(server.id, data);
-    },
-    [server, ws, state]
-  );
 
   useEffect(() => {
     term.loadAddon(fitAddon);
     term.loadAddon(webglAddon);
-    term.onData(handleSendLine);
+    term.onData((data: string) => {
+      if (!state.isRunning) return;
+      ws.sendLine(server.id, data);
+    });
 
     term.open(ref.current!);
     fitAddon.fit();
@@ -75,7 +70,8 @@ export default function ServerConsole({
       observer.disconnect();
       ws.removeEventListener('ServerProcessRead', serverProcessReadEvent);
     };
-  }, [fitAddon, handleSendLine, server, term, webglAddon, ws]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <Box sx={{ position: 'relative', flexGrow: 1 }}>

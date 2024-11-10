@@ -69,13 +69,14 @@ export default function ServerConsole({
     return () => {
       observer.disconnect();
       ws.removeEventListener('ServerProcessRead', serverProcessReadEvent);
+      term.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <Box sx={{ position: 'relative', flexGrow: 1 }}>
-      <div ref={ref} style={{ width: '100%', height: '100%' }} />
+      <div ref={ref} style={{ width: '100%', height: '80%' }} />
       {!state.isRunning && (
         <Box
           sx={{

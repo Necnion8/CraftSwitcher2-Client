@@ -6,8 +6,12 @@ import { APIError } from 'src/abc/api-error';
 
 export default class ServerInstaller {
   static async getAvailableTypes(): Promise<string[]> {
-    const result = await axios.get('/jardl/types');
-    return result.data;
+    try {
+      const result = await axios.get('/jardl/types');
+      return result.data;
+    } catch (e) {
+      throw APIError.fromError(e);
+    }
   }
 
   static async getVersions(

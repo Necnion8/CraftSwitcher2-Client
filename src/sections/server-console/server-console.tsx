@@ -14,6 +14,19 @@ import Typography from '@mui/material/Typography';
 
 import { APIError } from 'src/abc/api-error';
 
+// ---------------------
+
+const debounce = <T extends (...args: any[]) => unknown>(
+  callback: T,
+  delay = 500
+): ((...args: Parameters<T>) => void) => {
+  let timeoutId: number;
+  return (...args) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => callback(...args), delay);
+  };
+};
+
 export default function ServerConsole({
   server,
   state,
@@ -51,10 +64,13 @@ export default function ServerConsole({
       }
     })();
 
-    const observer = new ResizeObserver((entries) => {
-      entries.forEach(() => {
-        fitAddon.fit();
-      });
+    const debouncedFit = debounce(() => {
+      ws.setTermSize(server.id, term.cols, term.rows);
+    });
+
+    const observer = new ResizeObserver(() => {
+      debouncedFit();
+      fitAddon.fit();
     });
 
     observer.observe(ref.current!);
@@ -62,6 +78,7 @@ export default function ServerConsole({
     const serverProcessReadEvent = (event: ServerProcessReadEvent) => {
       if (event.serverId === server.id) {
         term!.write(event.data);
+        console.log(event.data);
       }
     };
     ws.addEventListener('ServerProcessRead', serverProcessReadEvent);
@@ -76,7 +93,7 @@ export default function ServerConsole({
 
   return (
     <Box sx={{ position: 'relative', flexGrow: 1 }}>
-      <div ref={ref} style={{ width: '100%', height: '80%' }} />
+      <div ref={ref} style={{ width: '100%', height: '100%' }} />
       {!state.isRunning && (
         <Box
           sx={{

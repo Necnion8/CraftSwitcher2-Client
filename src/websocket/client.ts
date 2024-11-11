@@ -29,6 +29,17 @@ export class WebSocketClient {
     );
   }
 
+  public setTermSize(serverId: string, cols: number, rows: number): void {
+    this.ws.send(
+      JSON.stringify({
+        type: 'server_process_set_term_size',
+        server: serverId,
+        cols,
+        rows,
+      })
+    );
+  }
+
   private onMessage(e: MessageEvent<string>) {
     const data = JSON.parse(e.data);
 

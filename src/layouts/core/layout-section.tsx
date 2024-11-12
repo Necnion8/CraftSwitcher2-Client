@@ -49,6 +49,7 @@ export function LayoutSection({
           display="flex"
           flex="1 1 auto"
           flexDirection="column"
+          sx={{ height: '100%' }}
           className={layoutClasses.hasSidebar}
         >
           {headerSection}

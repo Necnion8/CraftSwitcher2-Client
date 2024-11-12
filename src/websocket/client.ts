@@ -11,12 +11,21 @@ import Server from '../api/server';
 export class WebSocketClient {
   private ws: WebSocket;
 
+  private closed = false;
+
   private events = new Map<any, ((e: any) => void)[]>();
 
   constructor() {
+    this.ws = new WebSocket('');
+    this.connect();
+  }
+
+  private connect() {
     this.ws = new WebSocket(`${axios.defaults.baseURL || ''}/ws`);
     this.ws.onmessage = this.onMessage.bind(this);
-    console.log('aa');
+    this.ws.onclose = this.onClose.bind(this);
+    this.ws.onopen = this.onOpen.bind(this);
+    console.log('WebSocket connection open');
   }
 
   public sendLine(serverId: string, data: string): void {
@@ -115,6 +124,19 @@ export class WebSocketClient {
     }
   }
 
+  private onClose(e: CloseEvent) {
+    this.events.get('close')?.map((cb) => cb(e));
+
+    if (!this.closed) {
+      console.warn('Websocket Connection closed. Reconnecting...');
+      setTimeout(() => this.connect(), 1000);
+    }
+  }
+
+  private onOpen(e: Event) {
+    this.events.get('open')?.map((cb) => cb(e));
+  }
+
   addEventListener<K extends keyof EventMap>(event: K, callback: (e: EventMap[K]) => void) {
     const events = this.events.get(event) || [];
     events.push(callback);
@@ -129,6 +151,7 @@ export class WebSocketClient {
   }
 
   close() {
+    this.closed = true;
     this.ws.close();
   }
 }
@@ -211,4 +234,6 @@ export interface EventMap {
   ServerChangeState: ServerChangeStateEvent;
   FileTaskStart: FileTaskEvent;
   FileTaskEnd: FileTaskEvent;
+  open: Event;
+  close: CloseEvent;
 }

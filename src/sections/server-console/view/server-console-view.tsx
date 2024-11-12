@@ -103,8 +103,8 @@ export function ServerConsoleView() {
         sx={{
           width: '100%',
           flexGrow: 1,
+          flexShrink: 1,
           display: 'flex',
-          height: 0,
           [theme.breakpoints.down(layoutQuery)]: { flexDirection: 'column' },
         }}
       >

@@ -10,6 +10,7 @@ import { useRef, useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import { alpha } from '@mui/material';
+import Slide from '@mui/material/Slide';
 import Typography from '@mui/material/Typography';
 
 import { APIError } from 'src/abc/api-error';
@@ -41,6 +42,8 @@ export default function ServerConsole({
   const [fitAddon] = useState(new FitAddon());
   const [webglAddon] = useState(new WebglAddon());
 
+  const [wsState, setWsState] = useState(true);
+
   useEffect(() => {
     term.loadAddon(fitAddon);
     term.loadAddon(webglAddon);
@@ -66,6 +69,7 @@ export default function ServerConsole({
 
     const debouncedFit = debounce(() => {
       ws.setTermSize(server.id, term.cols, term.rows);
+      term.scrollToBottom();
     });
 
     const observer = new ResizeObserver(() => {
@@ -83,17 +87,28 @@ export default function ServerConsole({
     };
     ws.addEventListener('ServerProcessRead', serverProcessReadEvent);
 
+    const onWebSocketOpen = () => {
+      setWsState(true);
+      ws.removeEventListener('open', onWebSocketOpen);
+    };
+    const onWebSocketClose = () => {
+      setWsState(false);
+      ws.addEventListener('open', onWebSocketOpen);
+    };
+    ws.addEventListener('close', onWebSocketClose);
+
     return () => {
       observer.disconnect();
       ws.removeEventListener('ServerProcessRead', serverProcessReadEvent);
+      ws.removeEventListener('close', onWebSocketClose);
       term.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <Box sx={{ position: 'relative', flexGrow: 1 }}>
-      <div ref={ref} style={{ width: '100%', height: '100%' }} />
+    <Box sx={{ position: 'relative', flexGrow: 1, display: 'flex' }}>
+      <div ref={ref} style={{ flex: 1 }} />
       {!state.isRunning && (
         <Box
           sx={{
@@ -112,6 +127,24 @@ export default function ServerConsole({
           <Typography variant="h5">このサーバーはオフラインです</Typography>
         </Box>
       )}
+      <Slide in={!wsState && state.isRunning} container={ref.current}>
+        <Box
+          sx={{
+            position: 'absolute',
+            width: '100%',
+            height: '30px',
+            top: 0,
+            left: 0,
+            backgroundColor: (theme) => alpha(theme.palette.warning.main, 0.5),
+            color: 'white',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <Typography variant="h6">接続が切断されました。再接続中です。</Typography>
+        </Box>
+      </Slide>
     </Box>
   );
 }

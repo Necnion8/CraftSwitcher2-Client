@@ -1,19 +1,16 @@
-import type { ServerChangeStateEvent } from 'src/websocket';
-
 import { toast } from 'sonner';
-import { useParams } from 'react-router-dom';
 import React, { useState, useEffect, useContext } from 'react';
+import { Route, Routes, useParams, useLocation } from 'react-router-dom';
 
-import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
 import { Skeleton } from '@mui/lab';
+import Tab from '@mui/material/Tab';
 import Link from '@mui/material/Link';
 import Card from '@mui/material/Card';
 import Tabs from '@mui/material/Tabs';
 import Stack from '@mui/material/Stack';
 import { useMediaQuery } from '@mui/material';
 import Typography from '@mui/material/Typography';
-import Breadcrumbs from '@mui/material/Breadcrumbs';
 import { useTheme, type Breakpoint } from '@mui/material/styles';
 
 import { RouterLink } from 'src/routes/components';
@@ -21,15 +18,19 @@ import { RouterLink } from 'src/routes/components';
 import Server from 'src/api/server';
 import { APIError } from 'src/abc/api-error';
 import ServerState from 'src/abc/server-state';
-import { WebSocketContext } from 'src/websocket';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { WebSocketContext, type ServerChangeStateEvent } from 'src/websocket';
 
 import { ServerStateLabel } from 'src/components/server-state-label';
 import { ServerProcessButton } from 'src/components/server-process-button';
 
-// ----------------------------------------------------------------------
+import ServerFiles from '../server-file/server-files';
+import { ServerSummaryView } from '../server-summary/view';
+import { ServerConsoleView } from '../server-console/view';
 
-export function ServerFileView() {
+// --------------------------------------------------
+
+export function ServerManagementView() {
   const theme = useTheme();
   const layoutQuery: Breakpoint = 'lg';
 
@@ -40,15 +41,23 @@ export function ServerFileView() {
   const [state, setState] = useState<ServerState>(ServerState.UNKNOWN);
   const ws = useContext(WebSocketContext);
 
+  const location = useLocation();
+
   useEffect(() => {
     if (!id) return undefined;
 
     (async () => {
       try {
-        const res = await Server.get(id!);
-        setServer(res!);
-        setState(res!.state);
+        const s = await Server.get(id!);
+        if (!s) {
+          toast.error('サーバの取得に失敗しました');
+          return;
+        }
+
+        setServer(s);
+        setState(s.state);
       } catch (e) {
+        console.log(e);
         toast.error(`サーバの取得に失敗しました: ${APIError.createToastMessage(e)}`);
       }
     })();
@@ -58,7 +67,6 @@ export function ServerFileView() {
         setState(e.newState);
       }
     };
-
     ws.addEventListener('ServerChangeState', onServerChangeState);
     return () => {
       ws.removeEventListener('ServerChangeState', onServerChangeState);
@@ -67,28 +75,31 @@ export function ServerFileView() {
     // eslint-disable-next-line
   }, []);
 
+  const getTabValue = () => {
+    if (location.pathname.endsWith('/console')) return 'console';
+    if (location.pathname.endsWith('/file')) return 'file';
+    if (location.pathname.endsWith('/config')) return 'config';
+    return 'summary';
+  };
+
   return (
     <DashboardContent maxWidth="xl">
       <Box display="flex" alignItems="center" pb={4}>
         <Box flexGrow={1}>
+          <Link
+            key="1"
+            color="inherit"
+            fontSize="small"
+            component={RouterLink}
+            href="../"
+            sx={{ width: 'fit-content' }}
+          >
+            サーバー
+          </Link>
           <Stack direction="row" alignItems="center" gap={1.5}>
             <Typography variant="h3">{server?.displayName || <Skeleton />}</Typography>
             <ServerStateLabel state={state} />
           </Stack>
-          <Breadcrumbs>
-            <Link
-              color="inherit"
-              fontSize="small"
-              sx={{ width: 'fit-content' }}
-              component={RouterLink}
-              href="../"
-            >
-              サーバー
-            </Link>
-            <Typography color="text.primary" fontSize="small">
-              管理
-            </Typography>
-          </Breadcrumbs>
         </Box>
         <Card sx={{ px: 2, py: 1, display: 'flex', gap: 1 }}>
           <ServerProcessButton server={server} state={state} />
@@ -105,7 +116,8 @@ export function ServerFileView() {
       >
         <Tabs
           orientation={isMobileSize ? 'horizontal' : 'vertical'}
-          value="file"
+          value={getTabValue()}
+          textColor="inherit"
           sx={{
             pr: 0.5,
             flexShrink: 0,
@@ -117,12 +129,21 @@ export function ServerFileView() {
               borderRight: 1,
               borderColor: 'grey.300',
             },
+            '& .MuiTabs-indicator': { backgroundColor: 'grey.900' },
           }}
         >
-          <Tab value="summary" label="概要" component={RouterLink} href="../" />
-          <Tab value="console" label="コンソール" component={RouterLink} href="../console" />
-          <Tab value="file" label="ファイル" component={RouterLink} href="./" />
+          <Tab value="summary" label="概要" component={RouterLink} href="" />
+          <Tab value="console" label="コンソール" component={RouterLink} href="console" />
+          <Tab value="file" label="ファイル" component={RouterLink} href="file" />
+          <Tab value="config" label="設定" component={RouterLink} href="config" />
         </Tabs>
+        <Box flexGrow={1} sx={{ height: '100%' }}>
+          <Routes>
+            <Route path="/" element={<ServerSummaryView server={server} />} />
+            <Route path="/console" element={<ServerConsoleView server={server} state={state} />} />
+            <Route path="/file" element={<ServerFiles server={server} ws={ws} />} />
+          </Routes>
+        </Box>
       </Card>
     </DashboardContent>
   );

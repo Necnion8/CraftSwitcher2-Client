@@ -1,12 +1,12 @@
 import type Server from 'src/api/server';
 import type ServerState from 'src/abc/server-state';
-import type { WebSocketClient, ServerProcessReadEvent } from 'src/websocket';
+import type { ServerProcessReadEvent } from 'src/websocket';
 
 import { toast } from 'sonner';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebglAddon } from '@xterm/addon-webgl';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useContext } from 'react';
 
 import Box from '@mui/material/Box';
 import { alpha } from '@mui/material';
@@ -14,6 +14,7 @@ import Slide from '@mui/material/Slide';
 import Typography from '@mui/material/Typography';
 
 import { APIError } from 'src/abc/api-error';
+import { WebSocketContext } from 'src/websocket';
 
 // ---------------------
 
@@ -28,19 +29,13 @@ const debounce = <T extends (...args: any[]) => unknown>(
   };
 };
 
-export default function ServerConsole({
-  server,
-  state,
-  ws,
-}: {
-  server: Server;
-  state: ServerState;
-  ws: WebSocketClient;
-}) {
+export default function ServerConsole({ server, state }: { server: Server; state: ServerState }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [term] = useState(new Terminal());
   const [fitAddon] = useState(new FitAddon());
   const [webglAddon] = useState(new WebglAddon());
+
+  const ws = useContext(WebSocketContext);
 
   const [wsState, setWsState] = useState(true);
 
@@ -107,7 +102,7 @@ export default function ServerConsole({
   }, []);
 
   return (
-    <Box sx={{ position: 'relative', flexGrow: 1, display: 'flex' }}>
+    <Box sx={{ position: 'relative', flexGrow: 1, display: 'flex', height: '100%' }}>
       <div ref={ref} style={{ flex: 1 }} />
       {!state.isRunning && (
         <Box

@@ -12,9 +12,7 @@ import { DashboardLayout } from 'src/layouts/dashboard';
 
 export const HomePage = lazy(() => import('src/pages/home'));
 export const ServerPage = lazy(() => import('src/pages/server'));
-export const ServerSummary = lazy(() => import('src/pages/server-summary'));
-export const ServerConsolePage = lazy(() => import('src/pages/server-console'));
-export const ServerFilePage = lazy(() => import('src/pages/server-file'));
+export const ServerManagement = lazy(() => import('src/pages/server-management'));
 export const ServerFileEditPage = lazy(() => import('src/pages/server-file-edit'));
 export const ServerCreatePage = lazy(() => import('src/pages/server-create'));
 export const UserPage = lazy(() => import('src/pages/user'));
@@ -56,15 +54,12 @@ export function Router() {
             {
               path: ':id',
               children: [
-                { element: <ServerSummary />, index: true },
-                { path: 'console', element: <ServerConsolePage /> },
+                { element: <ServerManagement />, index: true },
                 {
-                  path: 'file',
-                  children: [
-                    { element: <ServerFilePage />, index: true },
-                    { path: 'edit', element: <ServerFileEditPage /> },
-                  ],
+                  path: 'file/edit',
+                  element: <ServerFileEditPage />,
                 },
+                { path: '*', element: <ServerManagement /> },
               ],
             },
           ],

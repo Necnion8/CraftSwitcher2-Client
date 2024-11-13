@@ -336,10 +336,13 @@ export default function ServerFiles({ server, ws }: Props) {
 
   useEffect(() => {
     if (!params.has('path')) {
-      setParams((prev) => {
-        prev.set('path', '/');
-        return prev;
-      });
+      setParams(
+        (prev) => {
+          prev.set('path', '/');
+          return prev;
+        },
+        { replace: true }
+      );
     }
 
     reloadFiles();

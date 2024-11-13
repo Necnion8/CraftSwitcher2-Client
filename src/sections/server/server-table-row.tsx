@@ -134,7 +134,12 @@ export function ServerTableRow({
         </TableCell>
 
         <TableCell>
-          <Button variant="contained" component={Link} to={`./${server.id}/console`}>
+          <Button
+            color="inherit"
+            variant="contained"
+            component={Link}
+            to={`./${server.id}/console`}
+          >
             管理
           </Button>
         </TableCell>

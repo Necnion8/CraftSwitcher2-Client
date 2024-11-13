@@ -71,6 +71,7 @@ export function ServerConsoleView() {
     // eslint-disable-next-line
   }, []);
 
+  // TODO: 一つのページにまとめる
   return (
     <DashboardContent maxWidth="xl">
       <Box display="flex" alignItems="center" pb={4}>
@@ -111,6 +112,7 @@ export function ServerConsoleView() {
         <Tabs
           orientation={isMobileSize ? 'horizontal' : 'vertical'}
           value="console"
+          textColor="inherit"
           sx={{
             pr: 0.5,
             flexShrink: 0,
@@ -122,6 +124,7 @@ export function ServerConsoleView() {
               borderRight: 1,
               borderColor: 'grey.300',
             },
+            '& .MuiTabs-indicator': { backgroundColor: 'grey.900' },
           }}
         >
           <Tab value="summary" label="概要" component={RouterLink} href="../" />

@@ -111,7 +111,7 @@ export function ServerFileEditView() {
           color="inherit"
           startIcon={<Iconify icon="eva:arrow-ios-back-fill" />}
           component={Link}
-          to={`../?path=${file?.path}`}
+          to={`/server/${id}/file?path=${file?.path}`}
         >
           戻る
         </Button>

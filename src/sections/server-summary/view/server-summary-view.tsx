@@ -1,7 +1,7 @@
 import type Server from 'src/api/server';
 import type { PerformanceProgress } from 'src/websocket';
 
-import { useParams } from 'react-router-dom';
+import { useParams, useOutletContext } from 'react-router-dom';
 import React, { useState, useEffect, useContext } from 'react';
 
 import Box from '@mui/material/Box';
@@ -19,14 +19,13 @@ import { WebSocketContext } from 'src/websocket';
 
 import { AnalyticsWidgetSummary } from '../analytics-widget-summary';
 
-type Props = {
-  server: Server | null;
-};
+// --------------------------------------------------
 
-export function ServerSummaryView({ server }: Props) {
+export function ServerSummaryView() {
   const { id } = useParams<{ id: string }>();
   const [performance, setPerformance] = useState<PerformanceProgress | null>(null);
   const ws = useContext(WebSocketContext);
+  const { server } = useOutletContext<{ server: Server | null }>();
 
   useEffect(() => {
     const onPerformanceProgress = (e: PerformanceProgress) => {

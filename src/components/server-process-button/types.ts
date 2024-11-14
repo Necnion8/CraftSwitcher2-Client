@@ -25,4 +25,4 @@ export const stopDisabled = [
   ServerState.BUILD.name,
   ServerState.UNKNOWN.name,
 ];
-export const killDisabled = [ServerState.STOPPED.name];
+export const killDisabled = [ServerState.STOPPED.name, ServerState.UNKNOWN.name];

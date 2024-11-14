@@ -8,6 +8,11 @@ import { varAlpha } from 'src/theme/styles';
 import { AuthLayout } from 'src/layouts/auth';
 import { DashboardLayout } from 'src/layouts/dashboard';
 
+import { ServerFileView } from '../sections/server-file/view';
+import { ServerConfigView } from '../sections/server-config/view';
+import { ServerConsoleView } from '../sections/server-console/view';
+import { ServerSummaryView } from '../sections/server-summary/view';
+
 // ----------------------------------------------------------------------
 
 export const HomePage = lazy(() => import('src/pages/home'));
@@ -53,14 +58,17 @@ export function Router() {
             { path: 'create', element: <ServerCreatePage /> },
             {
               path: ':id',
+              element: <ServerManagement />,
               children: [
-                { element: <ServerManagement />, index: true },
-                {
-                  path: 'file/edit',
-                  element: <ServerFileEditPage />,
-                },
-                { path: '*', element: <ServerManagement /> },
+                { element: <ServerSummaryView />, index: true },
+                { path: 'console', element: <ServerConsoleView /> },
+                { path: 'file', element: <ServerFileView /> },
+                { path: 'config', element: <ServerConfigView /> },
               ],
+            },
+            {
+              path: ':id/file/edit',
+              element: <ServerFileEditPage />,
             },
           ],
         },

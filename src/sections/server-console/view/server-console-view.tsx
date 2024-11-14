@@ -2,6 +2,7 @@ import type Server from 'src/api/server';
 import type ServerState from 'src/abc/server-state';
 
 import React from 'react';
+import { useOutletContext } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import { alpha } from '@mui/material';
@@ -11,13 +12,9 @@ import ServerConsole from '../server-console';
 
 // ----------------------------------------------------------------------
 
-type Props = {
-  server: Server | null;
-  state: ServerState;
-};
+export function ServerConsoleView() {
+  const { server, state } = useOutletContext<{ server: Server | null; state: ServerState }>();
 
-export function ServerConsoleView({ server, state }: Props) {
-  // TODO: 一つのページにまとめる
   return (
     <>
       {server ? (

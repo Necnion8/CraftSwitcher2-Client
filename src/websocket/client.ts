@@ -1,11 +1,10 @@
 // eslint-disable-next-line max-classes-per-file
-import axios from 'axios';
-
+import Server from 'src/api/server';
 import ServerState from 'src/abc/server-state';
 
-import Server from '../api/server';
-
 // ----------------------------------------------------------------------
+
+const websocketUrl = `${import.meta.env.VITE_FRONTEND_URL}/ws`;
 
 // TODO: イベント追加
 export class WebSocketClient {
@@ -16,12 +15,15 @@ export class WebSocketClient {
   private events = new Map<any, ((e: any) => void)[]>();
 
   constructor() {
-    this.ws = new WebSocket('');
-    this.connect();
+    this.ws = new WebSocket(websocketUrl);
+    this.ws.onmessage = this.onMessage.bind(this);
+    this.ws.onclose = this.onClose.bind(this);
+    this.ws.onopen = this.onOpen.bind(this);
+    console.log('WebSocket connection open');
   }
 
   private connect() {
-    this.ws = new WebSocket(`${axios.defaults.baseURL || ''}/ws`);
+    this.ws = new WebSocket(websocketUrl);
     this.ws.onmessage = this.onMessage.bind(this);
     this.ws.onclose = this.onClose.bind(this);
     this.ws.onopen = this.onOpen.bind(this);

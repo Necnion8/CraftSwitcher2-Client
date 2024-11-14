@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
 import React, { useState, useEffect, useContext } from 'react';
-import { Route, Routes, useParams, useLocation } from 'react-router-dom';
+import { Outlet, useParams, useLocation } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import { Skeleton } from '@mui/lab';
@@ -23,10 +23,6 @@ import { WebSocketContext, type ServerChangeStateEvent } from 'src/websocket';
 
 import { ServerStateLabel } from 'src/components/server-state-label';
 import { ServerProcessButton } from 'src/components/server-process-button';
-
-import ServerFiles from '../server-file/server-files';
-import { ServerSummaryView } from '../server-summary/view';
-import { ServerConsoleView } from '../server-console/view';
 
 // --------------------------------------------------
 
@@ -75,12 +71,10 @@ export function ServerManagementView() {
     // eslint-disable-next-line
   }, []);
 
-  const getTabValue = () => {
-    if (location.pathname.endsWith('/console')) return 'console';
-    if (location.pathname.endsWith('/file')) return 'file';
-    if (location.pathname.endsWith('/config')) return 'config';
-    return 'summary';
-  };
+  const page =
+    ['console', 'file', 'config'].find(
+      (p) => location.pathname.endsWith(p) || location.pathname.endsWith(`${p}/`)
+    ) || 'summary';
 
   return (
     <DashboardContent maxWidth="xl">
@@ -116,7 +110,7 @@ export function ServerManagementView() {
       >
         <Tabs
           orientation={isMobileSize ? 'horizontal' : 'vertical'}
-          value={getTabValue()}
+          value={page}
           textColor="inherit"
           sx={{
             pr: 0.5,
@@ -138,11 +132,7 @@ export function ServerManagementView() {
           <Tab value="config" label="設定" component={RouterLink} href="config" />
         </Tabs>
         <Box flexGrow={1} sx={{ height: '100%' }}>
-          <Routes>
-            <Route path="/" element={<ServerSummaryView server={server} />} />
-            <Route path="/console" element={<ServerConsoleView server={server} state={state} />} />
-            <Route path="/file" element={<ServerFiles server={server} ws={ws} />} />
-          </Routes>
+          <Outlet context={{ server, state }} />
         </Box>
       </Card>
     </DashboardContent>

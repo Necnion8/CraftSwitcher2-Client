@@ -1,11 +1,11 @@
-import type LaunchOption from 'src/abc/launch-option';
+import type { LaunchOption } from 'src/abc/server-config';
 
 import axios from 'axios';
 
 import ServerType from 'src/abc/server-type';
 import { APIError } from 'src/abc/api-error';
 import ServerState from 'src/abc/server-state';
-import ServerConfig from 'src/abc/server-config';
+import { ServerConfig } from 'src/abc/server-config';
 
 import { FileManager } from './file-manager';
 

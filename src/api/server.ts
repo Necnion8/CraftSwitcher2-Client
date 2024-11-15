@@ -163,6 +163,32 @@ export default class Server {
   }
 
   /**
+   * 擬似端末のウインドウサイズを取得します
+   * 幅x高のカーソル数を返します
+   */
+  async getTermSize(): Promise<number[]> {
+    try {
+      const result = await axios.get(`/server/${this.id}/term/size`);
+      return result.data;
+    } catch (e) {
+      throw APIError.fromError(e);
+    }
+  }
+
+  /**
+   * 擬似端末のウインドウサイズを設定します
+   * 幅x高のカーソル数を指定します
+   */
+  async setTermSize(cols: number, rows: number): Promise<boolean> {
+    try {
+      const result = await axios.post(`/server/${this.id}/term/size?cols=${cols}&rows=${rows}`);
+      return result.data.result;
+    } catch (e) {
+      throw APIError.fromError(e);
+    }
+  }
+
+  /**
    * キャッシュされているサーバーログを取得します
    */
   async getLogsLatest(
@@ -328,8 +354,8 @@ type ServerCreateParams = {
   directory: string;
   type: ServerType;
   launchOption: LaunchOption;
-  enableLaunchCommand: boolean;
-  launchCommand: string | null;
-  stopCommand: string | null;
-  shutdownTimeout: number | null;
+  enableLaunchCommand?: boolean;
+  launchCommand?: string | null;
+  stopCommand?: string | null;
+  shutdownTimeout?: number | null;
 };

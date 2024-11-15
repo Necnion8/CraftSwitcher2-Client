@@ -2,7 +2,7 @@ import type Server from 'src/api/server';
 
 import { toast } from 'sonner';
 import React, { useState, useEffect } from 'react';
-import { useParams, useOutletContext } from 'react-router-dom';
+import { useOutletContext } from 'react-router-dom';
 
 import Stack from '@mui/material/Stack';
 import Divider from '@mui/material/Divider';
@@ -30,27 +30,39 @@ export function ServerConfigView() {
   const [javaOptions, setJavaOptions] = useState<string | null>('');
   const [jarFilePath, setJarFilePath] = useState<string | null>('');
   const [serverOptions, setServerOptions] = useState<string | null>('');
-  const [maxHeapMemory, setMaxHeapMemory] = useState<string | null>('');
-  const [minHeapMemory, setMinHeapMemory] = useState<string | null>('');
-  const [enableFreeMemoryCheck, setEnableFreeMemoryCheck] = useState(false);
-  const [enableReporterAgent, setEnableReporterAgent] = useState(false);
-  const [enableScreen, setEnableScreen] = useState(false);
+  const [maxHeapMemory, setMaxHeapMemory] = useState<number | null>(null);
+  const [minHeapMemory, setMinHeapMemory] = useState<number | null>(null);
+  const [enableFreeMemoryCheck, setEnableFreeMemoryCheck] = useState<boolean | null>(false);
+  const [enableReporterAgent, setEnableReporterAgent] = useState<boolean | null>(false);
+  const [enableScreen, setEnableScreen] = useState<boolean | null>(false);
   const [launchCommand, setLaunchCommand] = useState<string | null>('');
   const [stopCommand, setStopCommand] = useState<string | null>('');
-  const [shutdownTimeout, setShutdownTimeout] = useState<string | null>('');
+  const [shutdownTimeout, setShutdownTimeout] = useState<number | null>(null);
 
   useEffect(() => {
-    setName(server?.displayName || '');
-    setType(server?.type);
+    if (!server) return;
+
+    setName(server.displayName);
+    setType(server.type);
 
     (async () => {
       try {
-        const serverConfig = await server?.getConfig();
+        const serverConfig = await server.getConfig();
+        const { launchOption } = serverConfig;
 
-        setJavaPreset(serverConfig?.launchOption!.javaPreset || null);
-        setJavaExecutable(serverConfig?.launchOption!.javaExecutable || null);
-        setJavaOptions(serverConfig?.launchOption!.javaOptions || null);
-        setJarFilePath(serverConfig?.launchOption!.javaPreset || null);
+        setJavaPreset(launchOption.javaPreset);
+        setJavaExecutable(launchOption.javaExecutable);
+        setJavaOptions(launchOption.javaOptions);
+        setJarFilePath(launchOption.javaPreset);
+        setServerOptions(launchOption.serverOptions);
+        setMaxHeapMemory(launchOption.maxHeapMemory);
+        setMinHeapMemory(launchOption.minHeapMemory);
+        setEnableFreeMemoryCheck(launchOption.enableFreeMemoryCheck);
+        setEnableReporterAgent(launchOption.enableReporterAgent);
+        setEnableScreen(launchOption.enableScreen);
+        setLaunchCommand(serverConfig?.launchCommand);
+        setStopCommand(serverConfig?.stopCommand || null);
+        setShutdownTimeout(serverConfig?.shutdownTimeout || null);
       } catch (e) {
         console.log(e);
         toast.error(`サーバの取得に失敗しました: ${APIError.createToastMessage(e)}`);
@@ -124,16 +136,44 @@ export function ServerConfigView() {
           )}
         </Grid>
         <Grid xs={12} sm={6}>
-          <TextField label="Java オプション" fullWidth />
+          <TextField
+            label="Java オプション"
+            value={javaOptions}
+            onChange={(e) => setJavaOptions(e.target.value)}
+            fullWidth
+          />
         </Grid>
         <Grid xs={12} sm={6}>
-          <TextField label="Jarファイルパス" fullWidth />
+          <TextField
+            label="Jarファイルパス"
+            value={jarFilePath}
+            onChange={(e) => setJarFilePath(e.target.value)}
+            fullWidth
+          />
         </Grid>
         <Grid xs={12} sm={6}>
-          <TextField label="サーバーオプション" fullWidth />
+          <TextField
+            label="サーバーオプション"
+            value={serverOptions}
+            onChange={(e) => setServerOptions(e.target.value)}
+            fullWidth
+          />
         </Grid>
         <Grid xs={12} sm={6}>
-          <TextField label="メモリ割り当て" fullWidth />
+          <TextField
+            label="最大メモリ割り当て量"
+            value={maxHeapMemory}
+            onChange={(e) => setMaxHeapMemory(Number(e.target.value))}
+            fullWidth
+          />
+        </Grid>
+        <Grid xs={12} sm={6}>
+          <TextField
+            label="最小メモリ割り当て量"
+            value={minHeapMemory}
+            onChange={(e) => setMinHeapMemory(Number(e.target.value))}
+            fullWidth
+          />
         </Grid>
       </Grid>
       <Divider />

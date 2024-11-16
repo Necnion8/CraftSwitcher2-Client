@@ -88,7 +88,7 @@ export function ServerTableRow({
   const handleRename = async (e: FormEvent) => {
     e.preventDefault();
 
-    await server.putConfig({ name: renameValue });
+    await server.updateConfig({ name: renameValue });
 
     setRenameOpen(false);
     await reloadServers();

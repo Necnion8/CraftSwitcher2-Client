@@ -23,6 +23,7 @@ import Server from 'src/api/server';
 import ServerType from 'src/abc/server-type';
 import { APIError } from 'src/abc/api-error';
 import { ServerGlobalConfig } from 'src/api/config';
+import { LaunchOption } from 'src/abc/server-config';
 
 import { Iconify } from 'src/components/iconify';
 import { SvgColor } from 'src/components/svg-color';
@@ -135,21 +136,24 @@ export default function ServerCreateNew({ setPage }: { setPage: (page: number) =
     let server: Server | false;
 
     try {
+      const launchOption = new LaunchOption(
+        null,
+        javaExecutable,
+        javaOptions,
+        '',
+        serverOptions,
+        maxHeapMemory,
+        minHeapMemory,
+        enableFreeMemoryCheck,
+        enableReporterAgent,
+        false
+      );
+
       server = await Server.create({
         name,
         directory,
         type: type!,
-        launchOption: {
-          javaPreset: null,
-          javaExecutable,
-          javaOptions,
-          jarFile: '',
-          serverOptions,
-          maxHeapMemory,
-          minHeapMemory,
-          enableFreeMemoryCheck,
-          enableReporterAgent,
-        },
+        launchOption,
         shutdownTimeout,
       });
       if (!server) {

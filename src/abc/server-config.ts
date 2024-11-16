@@ -17,11 +17,11 @@ export class ServerConfig {
     public readonly lastBackupAt: Date | null
   ) {}
 
-  static toJSON(config: ServerConfig) {
+  static toJSON(config: Partial<ServerConfig>) {
     return JSON.stringify({
       name: config.name,
-      type: config.type.name,
-      ...config.launchOption.toConfig(),
+      type: config.type?.name,
+      launchOption: config.launchOption?.toConfig(),
       enableLaunchCommand: config.enableLaunchCommand,
       launchCommand: config.launchCommand,
       stopCommand: config.stopCommand,

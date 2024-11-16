@@ -261,7 +261,7 @@ export default class Server {
    * サーバーの設定を更新します
    * @param config
    */
-  async putConfig(config: ServerConfig): Promise<boolean> {
+  async updateConfig(config: Partial<ServerConfig>): Promise<boolean> {
     try {
       const result = await axios.put(`/server/${this.id}/config`, ServerConfig.toJSON(config), {
         headers: {

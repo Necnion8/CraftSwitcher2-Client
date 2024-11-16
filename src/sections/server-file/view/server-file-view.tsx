@@ -377,12 +377,11 @@ export function ServerFileView() {
           handleExtract={handleExtract}
           handlMkdirDialogOpen={handleMkdirDialogOpen}
         />
-        <Scrollbar>
+        <Scrollbar style={{ height: 0, padding: '0 8px 8px 8px' }}>
           <TableContainer
             sx={{
               overflow: 'unset',
-              px: 2,
-              pb: 2,
+
               flexGrow: 1,
               '&:focus-visible': { outline: 'none' },
             }}
@@ -390,6 +389,7 @@ export function ServerFileView() {
             onContextMenu={onContextMenu}
           >
             <Table
+              stickyHeader
               sx={{
                 borderCollapse: 'separate',
                 borderSpacing: '0 4px',

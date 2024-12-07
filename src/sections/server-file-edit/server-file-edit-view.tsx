@@ -104,6 +104,28 @@ export function ServerFileEditView() {
     };
   }, [handleCtrlS]);
 
+  const handlePopstate = () => {
+    const isDiscardedOK = window.confirm(
+      '保存されていないデータは削除されますが、よろしいですか？'
+    );
+    if (isDiscardedOK) {
+      // OKの場合、historyAPIで戻るを実行します。
+      window.history.back();
+    }
+    // キャンセルの場合、 ダミー履歴を挿入して「戻る」を1回分吸収できる状態にする
+    window.history.pushState(null, '', null);
+  };
+
+  useEffect(() => {
+    if (isChanged) {
+      window.history.pushState(null, '', null);
+      window.addEventListener('popstate', handlePopstate);
+    }
+    return () => {
+      window.removeEventListener('popstate', handlePopstate);
+    };
+  }, [isChanged]);
+
   return (
     <DashboardContent>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>

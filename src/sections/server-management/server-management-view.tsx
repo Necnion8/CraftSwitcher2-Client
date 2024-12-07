@@ -11,6 +11,7 @@ import Tabs from '@mui/material/Tabs';
 import Stack from '@mui/material/Stack';
 import { useMediaQuery } from '@mui/material';
 import Typography from '@mui/material/Typography';
+import Breadcrumbs from '@mui/material/Breadcrumbs';
 import { useTheme, type Breakpoint } from '@mui/material/styles';
 
 import { RouterLink } from 'src/routes/components';
@@ -78,22 +79,26 @@ export function ServerManagementView() {
 
   return (
     <DashboardContent maxWidth="xl">
-      <Box display="flex" alignItems="center" pb={4}>
+      <Box display="flex" alignItems="center" pb={2}>
         <Box flexGrow={1}>
-          <Link
-            key="1"
-            color="inherit"
-            fontSize="small"
-            component={RouterLink}
-            href="../"
-            sx={{ width: 'fit-content' }}
-          >
-            サーバー
-          </Link>
           <Stack direction="row" alignItems="center" gap={1.5}>
             <Typography variant="h3">{server?.displayName || <Skeleton />}</Typography>
             <ServerStateLabel state={state} />
           </Stack>
+          <Breadcrumbs>
+            <Link
+              color="inherit"
+              fontSize="small"
+              sx={{ width: 'fit-content' }}
+              component={RouterLink}
+              href="../"
+            >
+              サーバー
+            </Link>
+            <Typography color="text.primary" fontSize="small">
+              管理
+            </Typography>
+          </Breadcrumbs>
         </Box>
         <Card sx={{ px: 2, py: 1, display: 'flex', gap: 1 }}>
           <ServerProcessButton server={server} state={state} />

@@ -5,6 +5,8 @@ import { APIError } from 'src/abc/api-error';
 // ------------------------------------------------------------
 
 export class ServerGlobalConfig {
+  public javaPreset: string;
+
   public javaExecutable: string;
 
   public javaOptions: string;
@@ -22,6 +24,7 @@ export class ServerGlobalConfig {
   public shutdownTimeout: number;
 
   constructor(data: ServerGlobalConfigResult) {
+    this.javaPreset = data['launch_option.java_preset'];
     this.javaExecutable = data['launch_option.java_executable'];
     this.javaOptions = data['launch_option.java_options'];
     this.serverOptions = data['launch_option.server_options'];
@@ -43,6 +46,7 @@ export class ServerGlobalConfig {
 }
 
 type ServerGlobalConfigResult = {
+  'launch_option.java_preset': string;
   'launch_option.java_executable': string;
   'launch_option.java_options': string;
   'launch_option.server_options': string;

@@ -21,11 +21,11 @@ export class ServerConfig {
     return JSON.stringify({
       name: config.name,
       type: config.type?.name,
-      launchOption: config.launchOption?.toConfig(),
-      enableLaunchCommand: config.enableLaunchCommand,
-      launchCommand: config.launchCommand,
-      stopCommand: config.stopCommand,
-      shutdownTimeout: config.shutdownTimeout,
+      ...config.launchOption?.toConfig(),
+      enable_launch_command: config.enableLaunchCommand,
+      launch_command: config.launchCommand,
+      stop_command: config.stopCommand,
+      shutdown_timeout: config.shutdownTimeout,
     });
   }
 

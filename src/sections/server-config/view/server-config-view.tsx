@@ -1,10 +1,13 @@
 import type Server from 'src/api/server';
 
 import { toast } from 'sonner';
-import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
 
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
@@ -17,15 +20,21 @@ import { Select, Switch, InputLabel, FormControl } from '@mui/material';
 
 import { APIError } from 'src/abc/api-error';
 import ServerType from 'src/abc/server-type';
+import { ServerGlobalConfig } from 'src/api/config';
 
 import { Iconify } from 'src/components/iconify';
-import { ServerGlobalConfig } from 'src/api/config';
+import { Scrollbar } from 'src/components/scrollbar';
+
+import ConfigField from '../config-field';
+import { LaunchOption } from '../../../abc/server-config';
 
 export function ServerConfigView() {
   const { server } = useOutletContext<{ server: Server | null }>();
   const [globalSetting, setGlobalSetting] = useState<ServerGlobalConfig | null>(null);
 
   const [types, setTypes] = useState<ServerType[]>([]);
+
+  const [changed, setChanged] = useState(false);
 
   const [name, setName] = useState('');
   const [type, setType] = useState<ServerType>();
@@ -62,281 +71,489 @@ export function ServerConfigView() {
   const [useGlobalEnableScreen, setUseGlobalEnableScreen] = useState(false);
 
   const [launchCommand, setLaunchCommand] = useState('');
-  const [useGlobalLaunchCommand, setUseGlobalLaunchCommand] = useState(false);
-
   const [stopCommand, setStopCommand] = useState('');
-  const [useGlobalStopCommand, setUseGlobalStopCommand] = useState(false);
 
   const [shutdownTimeout, setShutdownTimeout] = useState(0);
   const [useGlobalShutdownTimeout, setUseGlobalShutdownTimeout] = useState(false);
 
+  const handleLoadConfig = useCallback(async () => {
+    setChanged(false);
+    try {
+      setName(server!.displayName);
+      setType(server!.type);
+
+      const serverConfig = await server!.getConfig();
+      const { launchOption } = serverConfig;
+
+      if (launchOption.javaPreset !== null) {
+        setJavaPreset(launchOption.javaPreset);
+      } else {
+        setUseGlobalJavaPreset(true);
+      }
+      if (launchOption.javaExecutable !== null) {
+        setJavaExecutable(launchOption.javaExecutable);
+      } else {
+        setUseGlobalJavaExecutable(true);
+      }
+      if (launchOption.javaOptions !== null) {
+        setJavaOptions(launchOption.javaOptions);
+      } else {
+        setUseGlobalJavaOptions(true);
+      }
+      setJarFilePath(launchOption.jarFile);
+
+      if (launchOption.serverOptions !== null) {
+        setServerOptions(launchOption.serverOptions);
+      } else {
+        setUseGlobalServerOptions(true);
+      }
+      if (launchOption.maxHeapMemory !== null) {
+        setMaxHeapMemory(launchOption.maxHeapMemory);
+      } else {
+        setUseGlobalMaxHeapMemory(true);
+      }
+      if (launchOption.minHeapMemory !== null) {
+        setMinHeapMemory(launchOption.minHeapMemory);
+      } else {
+        setUseGlobalMinHeapMemory(true);
+      }
+      if (launchOption.enableFreeMemoryCheck !== null) {
+        setEnableFreeMemoryCheck(launchOption.enableFreeMemoryCheck);
+      } else {
+        setUseGlobalEnableFreeMemoryCheck(true);
+      }
+      if (launchOption.enableReporterAgent !== null) {
+        setEnableReporterAgent(launchOption.enableReporterAgent);
+      } else {
+        setUseGlobalEnableReporterAgent(true);
+      }
+      if (launchOption.enableScreen !== null) {
+        setEnableScreen(launchOption.enableScreen);
+      } else {
+        setUseGlobalEnableScreen(true);
+      }
+
+      setLaunchCommand(serverConfig.launchCommand || '');
+      setStopCommand(serverConfig.stopCommand || '');
+
+      setShutdownTimeout(serverConfig.shutdownTimeout || 0);
+      if (!serverConfig.shutdownTimeout !== null) {
+        setUseGlobalShutdownTimeout(true);
+      }
+    } catch (e) {
+      console.log(e);
+      toast.error(`サーバ設定の取得に失敗しました: ${APIError.createToastMessage(e)}`);
+    }
+
+    setTypes(await ServerType.availableTypes());
+    setGlobalSetting(await ServerGlobalConfig.get());
+  }, [server]);
+
+  const handleUpdate = async () => {
+    const launchOption = new LaunchOption(
+      useGlobalJavaPreset ? null : javaPreset,
+      useGlobalJavaExecutable ? null : javaExecutable,
+      useGlobalJavaOptions ? null : javaOptions,
+      jarFilePath,
+      useGlobalServerOptions ? null : serverOptions,
+      useGlobalMaxHeapMemory ? null : maxHeapMemory,
+      useGlobalMinHeapMemory ? null : minHeapMemory,
+      useGlobalEnableFreeMemoryCheck ? null : enableFreeMemoryCheck,
+      useGlobalEnableReporterAgent ? null : enableReporterAgent,
+      useGlobalEnableScreen ? null : enableScreen
+    );
+
+    const res = await server?.updateConfig({
+      name,
+      type,
+      launchOption,
+      enableLaunchCommand: launchCommand !== '',
+      launchCommand,
+      stopCommand,
+      shutdownTimeout: useGlobalShutdownTimeout ? null : shutdownTimeout,
+    });
+
+    handleLoadConfig();
+    if (res) toast.success('サーバーの設定を更新しました');
+  };
+
+  const handleReloadConfig = async () => {
+    const res = await server?.reloadConfig();
+    if (res) toast.success('サーバーの設定ファイルを再読み込みしました。');
+
+    handleLoadConfig();
+  };
+
   useEffect(() => {
     if (!server) return;
 
-    setName(server.displayName);
-    setType(server.type);
-
-    (async () => {
-      try {
-        const serverConfig = await server.getConfig();
-        const { launchOption } = serverConfig;
-
-        if (launchOption.javaPreset) {
-          setJavaPreset(launchOption.javaPreset);
-        } else {
-          setUseGlobalJavaPreset(true);
-        }
-        if (launchOption.javaExecutable) {
-          setJavaExecutable(launchOption.javaExecutable);
-        } else {
-          setUseGlobalJavaExecutable(true);
-        }
-        if (launchOption.javaOptions) {
-          setJavaOptions(launchOption.javaOptions);
-        } else {
-          setUseGlobalJavaOptions(true);
-        }
-        setJarFilePath(launchOption.jarFile);
-
-        if (launchOption.serverOptions) {
-          setServerOptions(launchOption.serverOptions);
-        } else {
-          setUseGlobalServerOptions(true);
-        }
-        if (launchOption.maxHeapMemory) {
-          setMaxHeapMemory(launchOption.maxHeapMemory);
-        } else {
-          setUseGlobalMaxHeapMemory(true);
-        }
-        if (launchOption.minHeapMemory !== null) {
-          setMinHeapMemory(launchOption.minHeapMemory);
-        } else {
-          setUseGlobalMinHeapMemory(true);
-        }
-        if (launchOption.enableFreeMemoryCheck !== null) {
-          setEnableFreeMemoryCheck(launchOption.enableFreeMemoryCheck);
-        } else {
-          setUseGlobalEnableFreeMemoryCheck(true);
-        }
-        if (launchOption.enableReporterAgent !== null) {
-          setEnableReporterAgent(launchOption.enableReporterAgent);
-        } else {
-          setUseGlobalEnableReporterAgent(true);
-        }
-        if (launchOption.enableScreen !== null) {
-          setEnableScreen(launchOption.enableScreen);
-        } else {
-          setUseGlobalEnableScreen(true);
-        }
-        if (launchOption.enableScreen) {
-          setEnableScreen(launchOption.enableScreen);
-        } else {
-          setUseGlobalEnableScreen(true);
-        }
-
-        setLaunchCommand(serverConfig.launchCommand || '');
-        if (!serverConfig.stopCommand) {
-          setUseGlobalLaunchCommand(true);
-        }
-
-        setStopCommand(serverConfig.stopCommand || '');
-        if (!serverConfig.stopCommand) {
-          setUseGlobalStopCommand(true);
-        }
-
-        setShutdownTimeout(serverConfig.shutdownTimeout || 0);
-        if (!serverConfig.shutdownTimeout) {
-          setUseGlobalShutdownTimeout(true);
-        }
-      } catch (e) {
-        console.log(e);
-        toast.error(`サーバの取得に失敗しました: ${APIError.createToastMessage(e)}`);
-      }
-
-      setTypes(await ServerType.availableTypes());
-      setGlobalSetting(await ServerGlobalConfig.get());
-    })();
-  }, [server]);
+    handleLoadConfig();
+  }, [server, handleLoadConfig]);
 
   return (
-    <Stack flexGrow={1} p={3} gap={2}>
-      <Typography variant="h5">一般</Typography>
-      <Divider />
-      <Stack gap={2}>
-        <TextField
-          label="名前"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          sx={{ width: 300 }}
-        />
-        <FormControl sx={{ width: 300 }}>
-          <InputLabel id="type-label">種類</InputLabel>
-          <Select
-            labelId="type-label"
-            value={type?.name || ''}
-            label="種類"
-            onChange={(e) => {
-              setType(ServerType.get(e.target.value));
-            }}
-            variant="outlined"
-            displayEmpty
-          >
-            {types.reverse().map((t) => (
-              <MenuItem key={t.name} value={t.name}>
-                {t.displayName}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Stack>
-
-      <Typography variant="h5">起動</Typography>
-      <Divider />
-      <Grid container spacing={2}>
-        <Grid xs={12}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={useJavaPreset}
-                onChange={(e) => setUseJavaPreset(e.target.checked)}
+    <Box sx={{ height: '100%', position: 'relative' }}>
+      <Stack
+        sx={{
+          flexGrow: 1,
+          height: '100%',
+          position: 'relative',
+        }}
+      >
+        <Scrollbar style={{ height: 0, padding: '0 8px 8px 8px' }}>
+          <Stack flexGrow={1} p={3} gap={2} mb={6}>
+            <Typography variant="h5">一般</Typography>
+            <Divider />
+            <Stack gap={2}>
+              <TextField
+                label="名前"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setChanged(true);
+                }}
+                sx={{ width: 300 }}
               />
-            }
-            label="Javaプリセットを使用する"
-          />
-        </Grid>
-        <Grid xs={12} md={6}>
-          {useJavaPreset ? (
-            <TextField
-              label="Java プリセット名"
-              value={useGlobalJavaPreset ? globalSetting?.javaPreset : javaPreset}
-              disabled={useGlobalJavaPreset}
-              onChange={(e) => setJavaPreset(e.target.value)}
-              fullWidth
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={() => setUseGlobalJavaPreset(!useGlobalJavaPreset)}>
-                      <Iconify
-                        icon={useGlobalJavaPreset ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
-                      />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-          ) : (
-            <TextField
-              label="Java Excutable"
-              value={useGlobalJavaExecutable ? globalSetting?.javaExecutable : javaExecutable}
-              disabled={useGlobalJavaExecutable}
-              onChange={(e) => setJavaExecutable(e.target.value)}
-              fullWidth
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setUseGlobalJavaExecutable(!useGlobalJavaExecutable)}
-                    >
-                      <Iconify
-                        icon={useGlobalJavaExecutable ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
-                      />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-          )}
-        </Grid>
-        <Grid xs={12} sm={6}>
-          <TextField
-            label="Java オプション"
-            value={useGlobalJavaOptions ? globalSetting?.javaOptions : javaOptions}
-            disabled={useGlobalJavaOptions}
-            onChange={(e) => setJavaOptions(e.target.value)}
-            fullWidth
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setUseGlobalJavaOptions(!useGlobalJavaOptions)}>
-                    <Iconify
-                      icon={useGlobalJavaOptions ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
+              <FormControl sx={{ width: 300 }}>
+                <InputLabel id="type-label">種類</InputLabel>
+                <Select
+                  labelId="type-label"
+                  value={type?.name || ''}
+                  label="種類"
+                  onChange={(e) => {
+                    setType(ServerType.get(e.target.value));
+                    setChanged(true);
+                  }}
+                  variant="outlined"
+                  displayEmpty
+                >
+                  {types.reverse().map((t) => (
+                    <MenuItem key={t.name} value={t.name}>
+                      {t.displayName}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Stack>
+
+            <Typography variant="h5">起動</Typography>
+            <Divider />
+            <Grid container spacing={2}>
+              <Grid xs={12}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={useJavaPreset}
+                      onChange={(e) => {
+                        setUseJavaPreset(e.target.checked);
+                        setChanged(true);
+                      }}
                     />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Grid>
-        <Grid xs={12} sm={6}>
-          <TextField
-            label="Jarファイルパス"
-            value={jarFilePath}
-            onChange={(e) => setJarFilePath(e.target.value)}
-            fullWidth
-          />
-        </Grid>
-        <Grid xs={12} sm={6}>
-          <TextField
-            label="サーバーオプション"
-            value={useGlobalServerOptions ? globalSetting?.serverOptions : serverOptions}
-            disabled={useGlobalServerOptions}
-            onChange={(e) => setServerOptions(e.target.value)}
-            fullWidth
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setUseGlobalServerOptions(!useGlobalServerOptions)}>
-                    <Iconify
-                      icon={useGlobalServerOptions ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
+                  }
+                  label="Javaプリセットを使用する"
+                />
+              </Grid>
+              <Grid xs={12} md={6}>
+                {useJavaPreset ? (
+                  <ConfigField
+                    label="Java プリセット名"
+                    value={javaPreset}
+                    setValue={setJavaPreset}
+                    global={globalSetting?.javaPreset}
+                    useGlobal={useGlobalJavaPreset}
+                    setUseGlobal={setUseGlobalJavaPreset}
+                    setChanged={setChanged}
+                  />
+                ) : (
+                  <ConfigField
+                    label="Java Executable"
+                    value={javaExecutable}
+                    setValue={setJavaExecutable}
+                    global={globalSetting?.javaExecutable}
+                    useGlobal={useGlobalJavaExecutable}
+                    setUseGlobal={setUseGlobalJavaExecutable}
+                    setChanged={setChanged}
+                  />
+                )}
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <ConfigField
+                  label="Java オプション"
+                  value={javaOptions}
+                  setValue={setJavaOptions}
+                  global={globalSetting?.javaOptions}
+                  useGlobal={useGlobalJavaOptions}
+                  setUseGlobal={setUseGlobalJavaOptions}
+                  setChanged={setChanged}
+                />
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <TextField
+                  label="Jarファイルパス"
+                  value={jarFilePath}
+                  onChange={(e) => {
+                    setJarFilePath(e.target.value);
+                    setChanged(true);
+                  }}
+                  fullWidth
+                />
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <ConfigField
+                  label="サーバーオプション"
+                  value={serverOptions}
+                  setValue={setServerOptions}
+                  global={globalSetting?.serverOptions}
+                  useGlobal={useGlobalServerOptions}
+                  setUseGlobal={setUseGlobalServerOptions}
+                  setChanged={setChanged}
+                />
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <TextField
+                  label="最大メモリ割り当て量"
+                  type="number"
+                  inputProps={{ max: 1 }}
+                  value={useGlobalMaxHeapMemory ? globalSetting?.maxHeapMemory : maxHeapMemory}
+                  disabled={useGlobalMaxHeapMemory}
+                  onChange={(e) => {
+                    setMaxHeapMemory(Number(e.target.value));
+                    setChanged(true);
+                  }}
+                  fullWidth
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => {
+                            setUseGlobalMaxHeapMemory(!useGlobalMaxHeapMemory);
+                            setChanged(true);
+                          }}
+                        >
+                          <Iconify
+                            icon={
+                              useGlobalMaxHeapMemory ? 'solar:eye-bold' : 'solar:eye-closed-bold'
+                            }
+                          />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <TextField
+                  label="最小メモリ割り当て量"
+                  type="number"
+                  inputProps={{ min: 1 }}
+                  value={useGlobalMinHeapMemory ? globalSetting?.minHeapMemory : minHeapMemory}
+                  disabled={useGlobalMinHeapMemory}
+                  onChange={(e) => {
+                    setMinHeapMemory(Number(e.target.value));
+                    setChanged(true);
+                  }}
+                  fullWidth
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => {
+                            setUseGlobalMinHeapMemory(!useGlobalMinHeapMemory);
+                            setChanged(true);
+                          }}
+                        >
+                          <Iconify
+                            icon={
+                              useGlobalMinHeapMemory ? 'solar:eye-bold' : 'solar:eye-closed-bold'
+                            }
+                          />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+              <Grid xs={12}>
+                <FormControlLabel
+                  checked={
+                    useGlobalEnableFreeMemoryCheck
+                      ? globalSetting?.enableFreeMemoryCheck
+                      : enableFreeMemoryCheck
+                  }
+                  control={
+                    <Switch
+                      onChange={(e) => {
+                        setEnableFreeMemoryCheck(e.target.checked);
+                        setChanged(true);
+                      }}
                     />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Grid>
-        <Grid xs={12} sm={6}>
-          <TextField
-            label="最大メモリ割り当て量"
-            value={useGlobalMaxHeapMemory ? globalSetting?.maxHeapMemory : maxHeapMemory}
-            disabled={useGlobalMaxHeapMemory}
-            onChange={(e) => setMaxHeapMemory(Number(e.target.value))}
-            fullWidth
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setUseGlobalMaxHeapMemory(!useGlobalMaxHeapMemory)}>
-                    <Iconify
-                      icon={useGlobalMaxHeapMemory ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
+                  }
+                  disabled={useGlobalEnableFreeMemoryCheck}
+                  label="起動時に空きメモリを確認する"
+                />
+                <IconButton
+                  onClick={() => {
+                    setUseGlobalEnableFreeMemoryCheck(!useGlobalEnableFreeMemoryCheck);
+                    setChanged(true);
+                  }}
+                >
+                  <Iconify
+                    icon={
+                      useGlobalEnableFreeMemoryCheck ? 'solar:eye-bold' : 'solar:eye-closed-bold'
+                    }
+                  />
+                </IconButton>
+              </Grid>
+              <Grid xs={12}>
+                <FormControlLabel
+                  checked={
+                    useGlobalEnableReporterAgent
+                      ? globalSetting?.enableReporterAgent
+                      : enableReporterAgent
+                  }
+                  control={
+                    <Switch
+                      onChange={(e) => {
+                        setEnableReporterAgent(e.target.checked);
+                        setChanged(true);
+                      }}
                     />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Grid>
-        <Grid xs={12} sm={6}>
-          <TextField
-            label="最小メモリ割り当て量"
-            value={useGlobalMinHeapMemory ? globalSetting?.minHeapMemory : minHeapMemory}
-            disabled={useGlobalMinHeapMemory}
-            onChange={(e) => setMinHeapMemory(Number(e.target.value))}
-            fullWidth
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setUseGlobalMinHeapMemory(!useGlobalMinHeapMemory)}>
-                    <Iconify
-                      icon={useGlobalMinHeapMemory ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
+                  }
+                  disabled={useGlobalEnableReporterAgent}
+                  label="サーバー内連携モジュールを使用する"
+                />
+                <IconButton
+                  onClick={() => {
+                    setUseGlobalEnableReporterAgent(!useGlobalEnableReporterAgent);
+                    setChanged(true);
+                  }}
+                >
+                  <Iconify
+                    icon={useGlobalEnableReporterAgent ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
+                  />
+                </IconButton>
+              </Grid>
+              <Grid xs={12}>
+                <FormControlLabel
+                  checked={useGlobalEnableScreen ? globalSetting?.enableScreen : enableScreen}
+                  control={
+                    <Switch
+                      onChange={(e) => {
+                        setEnableScreen(e.target.checked);
+                        setChanged(true);
+                      }}
                     />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Grid>
-      </Grid>
-      <Divider />
-    </Stack>
+                  }
+                  disabled={useGlobalEnableScreen}
+                  label="GNU Screenを使用する"
+                />
+                <IconButton
+                  onClick={() => {
+                    setUseGlobalEnableScreen(!useGlobalEnableScreen);
+                    setChanged(true);
+                  }}
+                >
+                  <Iconify
+                    icon={useGlobalEnableScreen ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
+                  />
+                </IconButton>
+              </Grid>
+            </Grid>
+
+            <Typography variant="h5">その他</Typography>
+            <Divider />
+            <Grid container spacing={2}>
+              <Grid xs={12} sm={6}>
+                <TextField
+                  label="起動コマンド"
+                  value={launchCommand}
+                  onChange={(e) => {
+                    setLaunchCommand(e.target.value);
+                    setChanged(true);
+                  }}
+                  fullWidth
+                />
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <TextField
+                  label="停止コマンド"
+                  value={stopCommand}
+                  onChange={(e) => {
+                    setStopCommand(e.target.value);
+                    setChanged(true);
+                  }}
+                  fullWidth
+                />
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <TextField
+                  label="停止タイムアウト"
+                  value={
+                    useGlobalShutdownTimeout ? globalSetting?.shutdownTimeout : shutdownTimeout
+                  }
+                  type="number"
+                  inputProps={{ min: 1 }}
+                  disabled={useGlobalShutdownTimeout}
+                  onChange={(e) => {
+                    setShutdownTimeout(Number(e.target.value));
+                    setChanged(true);
+                  }}
+                  fullWidth
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        秒
+                        <IconButton
+                          sx={{ ml: 1 }}
+                          onClick={() => {
+                            setUseGlobalShutdownTimeout(!useGlobalShutdownTimeout);
+                            setChanged(true);
+                          }}
+                        >
+                          <Iconify
+                            icon={
+                              useGlobalShutdownTimeout ? 'solar:eye-bold' : 'solar:eye-closed-bold'
+                            }
+                          />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+            </Grid>
+          </Stack>
+        </Scrollbar>
+      </Stack>
+      <Card
+        sx={{
+          position: 'absolute',
+          bottom: 0,
+          width: '100%',
+          borderRadius: 0,
+          display: 'flex',
+          justifyContent: 'space-between',
+          p: 2,
+          gap: 1,
+        }}
+      >
+        <Button color="inherit" variant="outlined" onClick={handleReloadConfig}>
+          設定ファイルを再読み込み
+        </Button>
+        <Box>
+          <Button color="inherit" variant="contained" disabled={!changed} onClick={handleUpdate}>
+            更新
+          </Button>
+          <Button
+            color="inherit"
+            variant="outlined"
+            disabled={!changed}
+            onClick={handleLoadConfig}
+            sx={{ ml: 1 }}
+          >
+            変更を破棄
+          </Button>
+        </Box>
+      </Card>
+    </Box>
   );
 }

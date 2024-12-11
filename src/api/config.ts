@@ -21,6 +21,8 @@ export class ServerGlobalConfig {
 
   public enableReporterAgent: boolean;
 
+  public enableScreen: boolean;
+
   public shutdownTimeout: number;
 
   constructor(data: ServerGlobalConfigResult) {
@@ -32,6 +34,7 @@ export class ServerGlobalConfig {
     this.minHeapMemory = data['launch_option.min_heap_memory'];
     this.enableFreeMemoryCheck = data['launch_option.enable_free_memory_check'];
     this.enableReporterAgent = data['launch_option.enable_reporter_agent'];
+    this.enableScreen = data['launch_option.enable_screen'];
     this.shutdownTimeout = data.shutdown_timeout;
   }
 
@@ -54,5 +57,6 @@ type ServerGlobalConfigResult = {
   'launch_option.min_heap_memory': number;
   'launch_option.enable_free_memory_check': boolean;
   'launch_option.enable_reporter_agent': boolean;
+  'launch_option.enable_screen': boolean;
   shutdown_timeout: number;
 };

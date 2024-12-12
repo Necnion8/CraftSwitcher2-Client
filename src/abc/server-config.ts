@@ -73,7 +73,7 @@ export class LaunchOption {
       'launch_option.max_heap_memory': this.maxHeapMemory,
       'launch_option.min_heap_memory': this.minHeapMemory,
       'launch_option.enable_free_memory_check': this.enableFreeMemoryCheck,
-      'launch_option.enable_report': this.enableReporterAgent,
+      'launch_option.enable_reporter_agent': this.enableReporterAgent,
       'launch_option.enable_screen': this.enableScreen,
     };
   }
@@ -88,7 +88,7 @@ export class LaunchOption {
       max_heap_memory: this.maxHeapMemory,
       min_heap_memory: this.minHeapMemory,
       enable_free_memory_check: this.enableFreeMemoryCheck,
-      enable_report: this.enableReporterAgent,
+      enable_reporter_agent: this.enableReporterAgent,
       enable_screen: this.enableScreen,
     };
   }

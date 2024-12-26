@@ -1,4 +1,5 @@
 import type { LaunchOption } from 'src/abc/server-config';
+import type { BackupTask, BackupPreviewResult } from 'src/models/backup';
 
 import axios from 'axios';
 
@@ -7,6 +8,7 @@ import { APIError } from 'src/abc/api-error';
 import ServerState from 'src/abc/server-state';
 import { ServerConfig } from 'src/abc/server-config';
 
+import { Backup } from './backup';
 import { FileManager } from './file-manager';
 
 import type { ServerDirectory } from './file-manager';
@@ -336,6 +338,27 @@ export default class Server {
     } catch (e) {
       throw APIError.fromError(e);
     }
+  }
+
+  async getBackups(): Promise<Backup[]> {
+    return Backup.getByServer(this);
+  }
+
+  async getBackupTask(): Promise<BackupTask> {
+    return Backup.getTask(this);
+  }
+
+  async createBackup(comments: string | null, snapshot: boolean = false): Promise<BackupTask> {
+    return Backup.create(this, comments, snapshot);
+  }
+
+  async previewBackup(params: {
+    checkFiles?: boolean;
+    includeFiles?: boolean;
+    includeErrors?: boolean;
+    onlyUpdates?: boolean;
+  }): Promise<BackupPreviewResult> {
+    return Backup.preview(this, params);
   }
 }
 

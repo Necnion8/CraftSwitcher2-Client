@@ -1,4 +1,4 @@
-import type { FileManager } from 'src/api/file-manager';
+import type { ServerFileManager } from 'src/api/server-file-manager';
 
 import React from 'react';
 
@@ -8,14 +8,13 @@ import MenuList from '@mui/material/MenuList';
 import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 
 import FileType from 'src/abc/file-type';
-import { ServerFile } from 'src/api/file-manager';
 
 import { Iconify } from 'src/components/iconify';
 
 type AnchorPosition = { top: number; left: number } | undefined;
 
 type Props = {
-  selected: FileManager[];
+  selected: ServerFileManager[];
   menuOpen: boolean;
   handleCloseMenu: () => void;
   position: AnchorPosition;
@@ -99,7 +98,7 @@ export default function ServerFileContextMenu({
               </MenuItem>
             )}
 
-            {selected.length === 1 && selected[0] instanceof ServerFile && (
+            {selected.length === 1 && selected[0].isFile() && (
               <MenuItem onClick={handleDownload}>
                 <Iconify icon="fluent:arrow-download-16-regular" />
                 ダウンロード

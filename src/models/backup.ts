@@ -1,9 +1,12 @@
-import type { Backup } from 'src/api/backup';
-import type BackupType from 'src/abc/backup-type';
+import type Backup from 'src/api/backup';
 import type SnapshotStatus from 'src/abc/snapshot-status';
 import type BackupFileErrorType from 'src/abc/backup-file-error-type';
 
-import type { FileTask } from './task';
+import BackupType from 'src/abc/backup-type';
+
+import { FileTask } from './task';
+
+import type { FileTaskAPIResult } from './task';
 
 // ----------------------------------------------------------------------
 
@@ -102,8 +105,34 @@ export interface BackupFileHistoryEntry {
   status: SnapshotStatus | null;
 }
 
-export interface BackupTask extends FileTask {
+export class BackupTask extends FileTask {
   comments: string | null; // バックアップメモ
+
   backupType: BackupType;
+
   backupId: string; // バックアップID
+
+  constructor({
+    id,
+    type,
+    progress,
+    result,
+    src,
+    dst,
+    server,
+    comments,
+    backup_type,
+    backup_id,
+  }: BackupTaskAPIResult) {
+    super({ id, type, progress, result, src, dst, server });
+    this.comments = comments;
+    this.backupType = BackupType.valueOf(backup_type);
+    this.backupId = backup_id;
+  }
 }
+
+type BackupTaskAPIResult = FileTaskAPIResult & {
+  comments: string | null;
+  backup_type: string;
+  backup_id: string;
+};

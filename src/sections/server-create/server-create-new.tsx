@@ -22,8 +22,8 @@ import { RouterLink } from 'src/routes/components';
 import Server from 'src/api/server';
 import ServerType from 'src/abc/server-type';
 import { APIError } from 'src/abc/api-error';
-import { ServerGlobalConfig } from 'src/api/config';
 import { LaunchOption } from 'src/abc/server-config';
+import { ServerGlobalConfig } from 'src/api/global-config';
 
 import { Iconify } from 'src/components/iconify';
 import { SvgColor } from 'src/components/svg-color';

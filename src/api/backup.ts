@@ -1,6 +1,5 @@
 import type {
   BackupId,
-  BackupTask,
   BackupResult,
   BackupFilesResult,
   BackupPreviewResult,
@@ -13,12 +12,13 @@ import { toCamelCase } from 'src/utils/to-camelcase';
 
 import BackupType from 'src/abc/backup-type';
 import { APIError } from 'src/abc/api-error';
+import { BackupTask } from 'src/models/backup';
 
 import type Server from './server';
 
 // ----------------------------------------------------------------------
 
-export class Backup {
+export default class Backup {
   constructor(
     public id: string,
     public type: BackupType,
@@ -81,7 +81,7 @@ export class Backup {
   static async getTask(server: Server): Promise<BackupTask> {
     try {
       const result = await axios.get(`/server/${server.id}/backup/`);
-      return toCamelCase(result.data) as BackupTask;
+      return new BackupTask(result.data);
     } catch (e) {
       throw APIError.fromError(e);
     }
@@ -92,7 +92,7 @@ export class Backup {
       const result = await axios.post(
         `/server/${server.id}/backup?comments=${comments}&snapshot=${snapshot}`
       );
-      return toCamelCase(result.data) as BackupTask;
+      return new BackupTask(result.data);
     } catch (e) {
       throw APIError.fromError(e);
     }
@@ -200,7 +200,10 @@ export class Backup {
   async restore(server: Server): Promise<BackupTask> {
     try {
       const result = await axios.post(`/server/${server.id}/backup/${this.id}/restore`);
-      return toCamelCase(result.data) as BackupTask;
+
+      const data = toCamelCase(result.data);
+      data.backupType = BackupType.valueOf(data.backupType);
+      return data as BackupTask;
     } catch (e) {
       throw APIError.fromError(e);
     }

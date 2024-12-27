@@ -1,4 +1,6 @@
 // eslint-disable-next-line max-classes-per-file
+import type { JarDLBuildInfoResult, JarDLVersionInfoResult } from 'src/models/jardl';
+
 import ServerInstaller from 'src/api/jardl';
 
 export default class ServerType {
@@ -145,57 +147,16 @@ export default class ServerType {
     return result.map((c) => ServerType.get(c)!);
   }
 
-  async getVersions(): Promise<{ version: string; buildCount: number | null }[]> {
-    const result = await ServerInstaller.getVersions(this.name);
-    return result.map((c) => ({
-      version: c.version,
-      buildCount: c.build_count,
-    }));
+  async getVersions(): Promise<JarDLVersionInfoResult[]> {
+    return ServerInstaller.getVersions(this.name);
   }
 
-  async getBuilds(version: string): Promise<
-    {
-      build: string;
-      downloadUrl: string;
-      javaMajorVersion: number | null;
-      updatedAt: Date;
-      recommended: false;
-      isRequiredBuild: true;
-      isLoadedInfo: true;
-    }[]
-  > {
-    const result = await ServerInstaller.getBuilds(this.name, version);
-    return result.map((c) => ({
-      build: c.build,
-      downloadUrl: c.download_url,
-      javaMajorVersion: c.java_major_version,
-      updatedAt: new Date(c.updated_datetime),
-      recommended: c.recommended,
-      isRequiredBuild: c.is_required_build,
-      isLoadedInfo: c.is_loaded_info,
-    }));
+  async getBuilds(version: string): Promise<JarDLBuildInfoResult[]> {
+    return ServerInstaller.getBuilds(this.name, version);
   }
 
-  async getBuild(
-    version: string,
-    build: string
-  ): Promise<{
-    downloadUrl: string;
-    javaMajorVersion: number | null;
-    updatedAt: Date;
-    recommended: false;
-    isRequiredBuild: true;
-    isLoadedInfo: true;
-  }> {
-    const result = await ServerInstaller.getBuild(this.name, version, build);
-    return {
-      downloadUrl: result.download_url,
-      javaMajorVersion: result.java_major_version,
-      updatedAt: new Date(result.updated_datetime),
-      recommended: result.recommended,
-      isRequiredBuild: result.is_required_build,
-      isLoadedInfo: result.is_loaded_info,
-    };
+  async getBuild(version: string, build: string): Promise<JarDLBuildInfoResult> {
+    return ServerInstaller.getBuild(this.name, version, build);
   }
 }
 

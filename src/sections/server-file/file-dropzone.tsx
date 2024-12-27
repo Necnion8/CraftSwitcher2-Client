@@ -1,5 +1,5 @@
 import type { FileWithPath } from 'react-dropzone';
-import type { ServerDirectory } from 'src/api/file-manager';
+import type { ServerDirectory } from 'src/api/server-file-manager';
 
 import { toast } from 'sonner';
 import path from 'path-browserify';
@@ -33,7 +33,7 @@ export default function FileDropZone({ isActive, setIsActive, directory, reloadF
       // 一意のディレクトリを抽出
       const uniqueDirs: string[] = [];
       acceptedFiles.forEach((file) => {
-        const dirPath: string = path.dirname(file.path); // ファイルのディレクトリを指定
+        const dirPath: string = path.dirname(file.path!); // ファイルのディレクトリを指定
         if (dirPath === '.') return;
 
         const dirParts = dirPath.split(path.sep);

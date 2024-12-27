@@ -1,4 +1,4 @@
-import type { ServerFile, FileManager } from 'src/api/file-manager';
+import type { ServerFile, ServerFileManager } from 'src/api/server-file-manager';
 
 import React from 'react';
 
@@ -28,8 +28,8 @@ function FileIcon({ name, isCutFileSelected }: { name: string; isCutFileSelected
 
 type Props = {
   file: ServerFile;
-  handleSelect: (e: React.MouseEvent<HTMLTableRowElement>, f: FileManager) => void;
-  onContextMenu: (event: React.MouseEvent<HTMLTableRowElement>, file?: FileManager) => void;
+  handleSelect: (e: React.MouseEvent<HTMLTableRowElement>, f: ServerFileManager) => void;
+  onContextMenu: (event: React.MouseEvent<HTMLTableRowElement>, file?: ServerFileManager) => void;
   selected?: boolean;
   isCutFileSelected: boolean;
 };
@@ -90,7 +90,7 @@ export default function ServerFileTableRow({
       <TableCell sx={{ py: 0.5 }}>{fDateTime(file.modifyAt)}</TableCell>
       <TableCell sx={{ py: 0.5 }}>{file.type.displayName}</TableCell>
       <TableCell sx={{ py: 0.5 }} align="right">
-        {fNumber(Math.ceil(file.size / 1024))} KB
+        {fNumber(Math.ceil(file.size! / 1024))} KB
       </TableCell>
     </TableRow>
   );

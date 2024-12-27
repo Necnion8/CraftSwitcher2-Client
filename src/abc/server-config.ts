@@ -17,34 +17,32 @@ export class ServerConfig {
     public readonly lastBackupAt: Date | null
   ) {}
 
-  static toJSON(config: Partial<ServerConfig>) {
-    return JSON.stringify({
+  static serialize(config: Partial<ServerConfig>) {
+    return {
       name: config.name,
       type: config.type?.name,
       ...config.launchOption?.toConfig(),
-      enable_launch_command: config.enableLaunchCommand,
-      launch_command: config.launchCommand,
-      stop_command: config.stopCommand,
-      shutdown_timeout: config.shutdownTimeout,
-    });
+      enableLaunchCommand: config.enableLaunchCommand,
+      launchCommand: config.launchCommand,
+      stopCommand: config.stopCommand,
+      shutdownTimeout: config.shutdownTimeout,
+    };
   }
 
-  static serializeFromResult(result: AxiosResponse): ServerConfig {
-    const { data }: { data: ServerConfigResult } = result;
-
-    console.log(data);
+  static deserializeFromResult(result: AxiosResponse): ServerConfig {
+    const data = result.data as ServerConfigResult;
 
     return new ServerConfig(
       data.name,
       ServerType.get(data.type),
-      LaunchOption.serializeFromConfig(data),
-      data.enable_launch_command,
-      data.launch_command,
-      data.stop_command,
-      data.shutdown_timeout,
-      data.created_at ? new Date(data.created_at) : null,
-      data.last_launch_at ? new Date(data.last_launch_at) : null,
-      data.last_backup_at ? new Date(data.last_backup_at) : null
+      LaunchOption.deserializeFromConfig(data),
+      data.enableLaunchCommand,
+      data.launchCommand,
+      data.stopCommand,
+      data.shutdownTimeout,
+      data.createdAt ? new Date(data.createdAt) : null,
+      data.lastLaunchAt ? new Date(data.lastLaunchAt) : null,
+      data.lastBackupAt ? new Date(data.lastBackupAt) : null
     );
   }
 }
@@ -65,16 +63,16 @@ export class LaunchOption {
 
   toConfig() {
     return {
-      'launch_option.java_preset': this.javaPreset,
-      'launch_option.java_executable': this.javaExecutable,
-      'launch_option.java_options': this.javaOptions,
-      'launch_option.jar_file': this.jarFile,
-      'launch_option.server_options': this.serverOptions,
-      'launch_option.max_heap_memory': this.maxHeapMemory,
-      'launch_option.min_heap_memory': this.minHeapMemory,
-      'launch_option.enable_free_memory_check': this.enableFreeMemoryCheck,
-      'launch_option.enable_report': this.enableReporterAgent,
-      'launch_option.enable_screen': this.enableScreen,
+      'launchOption.java_preset': this.javaPreset,
+      'launchOption.java_executable': this.javaExecutable,
+      'launchOption.java_options': this.javaOptions,
+      'launchOption.jar_file': this.jarFile,
+      'launchOption.server_options': this.serverOptions,
+      'launchOption.max_heap_memory': this.maxHeapMemory,
+      'launchOption.min_heap_memory': this.minHeapMemory,
+      'launchOption.enable_free_memory_check': this.enableFreeMemoryCheck,
+      'launchOption.enable_report': this.enableReporterAgent,
+      'launchOption.enable_screen': this.enableScreen,
     };
   }
 
@@ -93,18 +91,18 @@ export class LaunchOption {
     };
   }
 
-  static serializeFromConfig(config: ServerConfigResult): LaunchOption {
+  static deserializeFromConfig(config: ServerConfigResult): LaunchOption {
     return new LaunchOption(
-      config['launch_option.java_preset'],
-      config['launch_option.java_executable'],
-      config['launch_option.java_options'],
-      config['launch_option.jar_file'],
-      config['launch_option.server_options'],
-      config['launch_option.max_heap_memory'],
-      config['launch_option.min_heap_memory'],
-      config['launch_option.enable_free_memory_check'],
-      config['launch_option.enable_reporter_agent'],
-      config['launch_option.enable_screen']
+      config['launchOption.javaPreset'],
+      config['launchOption.javaExecutable'],
+      config['launchOption.javaOptions'],
+      config['launchOption.jarFile'],
+      config['launchOption.serverOptions'],
+      config['launchOption.maxHeapMemory'],
+      config['launchOption.minHeapMemory'],
+      config['launchOption.enableFreeMemoryCheck'],
+      config['launchOption.enableReporterAgent'],
+      config['launchOption.enableScreen']
     );
   }
 }
@@ -112,21 +110,21 @@ export class LaunchOption {
 export type ServerConfigResult = {
   name: string | null;
   type: string;
-  'launch_option.java_preset': string | null;
-  'launch_option.java_executable': string | null;
-  'launch_option.java_options': string | null;
-  'launch_option.jar_file': string;
-  'launch_option.server_options': string | null;
-  'launch_option.max_heap_memory': number | null;
-  'launch_option.min_heap_memory': number | null;
-  'launch_option.enable_free_memory_check': boolean | null;
-  'launch_option.enable_reporter_agent': boolean | null;
-  'launch_option.enable_screen': boolean | null;
-  enable_launch_command: boolean | null;
-  launch_command: string | null;
-  stop_command: string | null;
-  shutdown_timeout: number | null;
-  created_at: Date | null;
-  last_launch_at: Date | null;
-  last_backup_at: Date | null;
+  'launchOption.javaPreset': string | null;
+  'launchOption.javaExecutable': string | null;
+  'launchOption.javaOptions': string | null;
+  'launchOption.jarFile': string;
+  'launchOption.serverOptions': string | null;
+  'launchOption.maxHeapMemory': number | null;
+  'launchOption.minHeapMemory': number | null;
+  'launchOption.enableFreeMemoryCheck': boolean | null;
+  'launchOption.enableReporterAgent': boolean | null;
+  'launchOption.enableScreen': boolean | null;
+  enableLaunchCommand: boolean | null;
+  launchCommand: string | null;
+  stopCommand: string | null;
+  shutdownTimeout: number | null;
+  createdAt: Date | null;
+  lastLaunchAt: Date | null;
+  lastBackupAt: Date | null;
 };

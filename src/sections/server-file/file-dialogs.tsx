@@ -1,5 +1,5 @@
 import type { FileTaskEvent, WebSocketClient } from 'src/websocket';
-import type { FileManager, ServerDirectory } from 'src/api/file-manager';
+import type { ServerDirectory, ServerFileManager } from 'src/api/server-file-manager';
 
 import { toast } from 'sonner';
 import React, { type FormEvent } from 'react';
@@ -15,12 +15,13 @@ import { fDateTime } from 'src/utils/format-time';
 
 import FileType from 'src/abc/file-type';
 import { APIError } from 'src/abc/api-error';
-import { ServerFileList } from 'src/api/file-manager';
+import FileTaskResult from 'src/abc/file-task-result';
+import { ServerFileList } from 'src/api/server-file-manager';
 
 import { Iconify } from 'src/components/iconify';
 
 type Props = {
-  selected: FileManager[];
+  selected: ServerFileManager[];
   resetSelected: () => void;
   ws: WebSocketClient | null;
   reloadFiles: () => void;
@@ -93,9 +94,9 @@ export default function FileDialogs({
         toast.error(`ファイル名の変更に失敗しました`);
       }
 
-      if (typeof res === 'number') {
+      if (res.result === FileTaskResult.PENDING) {
         const fileTaskEndEvent = (fileTaskEvent: FileTaskEvent) => {
-          if (fileTaskEvent.taskId === res) {
+          if (fileTaskEvent.taskId === res.taskId) {
             reloadFiles();
             ws?.removeEventListener('FileTaskEnd', fileTaskEndEvent);
           }
@@ -123,7 +124,7 @@ export default function FileDialogs({
       selected.map(async (file) => {
         try {
           const res = await file.remove();
-          if (typeof res === 'number') {
+          if (res.result === FileTaskResult.PENDING) {
             const fileTaskEndEvent = (fileTaskEvent: FileTaskEvent) => {
               if (fileTaskEvent.src === file.src) {
                 done += 1;
@@ -133,7 +134,7 @@ export default function FileDialogs({
             ws?.addEventListener('FileTaskEnd', fileTaskEndEvent);
             return;
           }
-          if (!res) {
+          if (res.result === FileTaskResult.FAILED) {
             error += 1;
           }
           done += 1;

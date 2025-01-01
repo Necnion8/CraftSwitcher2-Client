@@ -14,7 +14,7 @@ export interface BackupResult {
   id: string;
   type: string;
   source: string;
-  createdAt: string;
+  created: string;
   previousBackupId: string | null;
   path: string;
   comments: string | null;

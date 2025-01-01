@@ -33,12 +33,12 @@ export default class Backup {
     public finalSize: number | null // バックアップ後のサイズ
   ) {}
 
-  private static serializeFromResult(data: BackupResult): Backup {
+  private static deserializeFromResult(data: BackupResult): Backup {
     return new Backup(
       data.id,
       BackupType.valueOf(data.type),
       data.source,
-      new Date(data.createdAt),
+      new Date(data.created),
       data.previousBackupId,
       data.path,
       data.comments,
@@ -62,7 +62,7 @@ export default class Backup {
     try {
       const result = await axios.get(`/backup/${id}`);
       const data = toCamelCase(result.data) as BackupResult;
-      return Backup.serializeFromResult(data);
+      return Backup.deserializeFromResult(data);
     } catch (e) {
       throw APIError.fromError(e);
     }
@@ -72,7 +72,7 @@ export default class Backup {
     try {
       const result = await axios.get(`/server/${server.id}/backups`);
       const data = toCamelCase(result.data) as BackupResult[];
-      return data.map((d) => Backup.serializeFromResult(d));
+      return data.map((d) => Backup.deserializeFromResult(d));
     } catch (e) {
       throw APIError.fromError(e);
     }

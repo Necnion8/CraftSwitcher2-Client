@@ -1,4 +1,4 @@
-import type { FileManager, ServerDirectory } from 'src/api/file-manager';
+import type { ServerDirectory, ServerFileManager } from 'src/api/server-file-manager';
 
 import React from 'react';
 
@@ -27,8 +27,8 @@ type Props = {
   folder: ServerDirectory;
   src: string;
   onDoubleClick: (path: string) => void;
-  handleSelect: (e: React.MouseEvent<HTMLTableRowElement>, f: FileManager) => void;
-  onContextMenu: (event: React.MouseEvent<HTMLTableRowElement>, file?: FileManager) => void;
+  handleSelect: (e: React.MouseEvent<HTMLTableRowElement>, f: ServerFileManager) => void;
+  onContextMenu: (event: React.MouseEvent<HTMLTableRowElement>, file?: ServerFileManager) => void;
   selected: boolean;
   isCutFileSelected: boolean;
 };

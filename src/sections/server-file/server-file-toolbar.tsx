@@ -1,4 +1,4 @@
-import type { FileManager, ServerDirectory } from 'src/api/file-manager';
+import type { ServerDirectory, ServerFileManager } from 'src/api/server-file-manager';
 
 import React from 'react';
 
@@ -18,7 +18,7 @@ import { useTheme, type Breakpoint } from '@mui/material/styles';
 import { useRouter } from 'src/routes/hooks';
 
 import FileType from 'src/abc/file-type';
-import { ServerFile } from 'src/api/file-manager';
+import { ServerFile } from 'src/api/server-file-manager';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -29,14 +29,14 @@ type Props = {
   handleChangePath: (path: string) => void;
   filterName: string;
   setFilterName: (name: string) => void;
-  selected: FileManager[];
+  selected: ServerFileManager[];
   handleRenameDialogOpen: () => void;
   setRemoveOpen: React.Dispatch<React.SetStateAction<boolean>>;
   handleSetCopyFiles: () => void;
   handleSetCutFiles: () => void;
   handlePaste: () => void;
-  copyFiles: FileManager[];
-  cutFiles: FileManager[];
+  copyFiles: ServerFileManager[];
+  cutFiles: ServerFileManager[];
   handleDownload: () => void;
   handleCompress: () => void;
   handleExtract: () => void;

@@ -10,6 +10,7 @@ import { DashboardLayout } from 'src/layouts/dashboard';
 
 import { ServerFileView } from '../sections/server-file/view';
 import { ServerConfigView } from '../sections/server-config/view';
+import { ServerBackupView } from '../sections/server-backup/view';
 import { ServerConsoleView } from '../sections/server-console/view';
 import { ServerSummaryView } from '../sections/server-summary/view';
 
@@ -64,6 +65,7 @@ export function Router() {
                 { path: 'console', element: <ServerConsoleView /> },
                 { path: 'file', element: <ServerFileView /> },
                 { path: 'config', element: <ServerConfigView /> },
+                { path: 'backup', element: <ServerBackupView /> },
               ],
             },
             {

@@ -20,13 +20,13 @@ import { Select, Switch, InputLabel, FormControl } from '@mui/material';
 
 import { APIError } from 'src/abc/api-error';
 import ServerType from 'src/abc/server-type';
-import { ServerGlobalConfig } from 'src/api/config';
+import { LaunchOption } from 'src/abc/server-config';
+import { ServerGlobalConfig } from 'src/api/global-config';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
 import ConfigField from '../config-field';
-import { LaunchOption } from '../../../abc/server-config';
 
 export function ServerConfigView() {
   const { server } = useOutletContext<{ server: Server | null }>();

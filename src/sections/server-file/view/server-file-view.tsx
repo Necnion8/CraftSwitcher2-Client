@@ -1,6 +1,6 @@
 import type Server from 'src/api/server';
 import type { FileTaskEvent } from 'src/websocket';
-import type { FileManager } from 'src/api/file-manager';
+import type { ServerFileManager } from 'src/api/server-file-manager';
 
 import { toast } from 'sonner';
 import { useSearchParams, useOutletContext } from 'react-router-dom';
@@ -12,8 +12,9 @@ import TableBody from '@mui/material/TableBody';
 import TableContainer from '@mui/material/TableContainer';
 
 import { WebSocketContext } from 'src/websocket';
+import FileTaskResult from 'src/abc/file-task-result';
 import { APIError, APIErrorCode } from 'src/abc/api-error';
-import { ServerFile, ServerFileList, ServerDirectory } from 'src/api/file-manager';
+import { ServerFile, ServerFileList, ServerDirectory } from 'src/api/server-file-manager';
 
 import { Scrollbar } from 'src/components/scrollbar';
 
@@ -45,8 +46,8 @@ export function ServerFileView() {
   const [directory, setDirectory] = useState<ServerDirectory | null>(null);
 
   // copy cut
-  const [copyFiles, setCopyFiles] = useState<FileManager[]>([]);
-  const [cutFiles, setCutFiles] = useState<FileManager[]>([]);
+  const [copyFiles, setCopyFiles] = useState<ServerFileManager[]>([]);
+  const [cutFiles, setCutFiles] = useState<ServerFileManager[]>([]);
 
   // filter
   const [filterName, setFilterName] = useState('');
@@ -83,6 +84,8 @@ export function ServerFileView() {
 
       const info = await server.getDirectory(params.get('path')!);
 
+      console.log(info);
+
       setDirectory(info);
       setFiles(await info.children());
     } catch (e) {
@@ -107,7 +110,7 @@ export function ServerFileView() {
     [directory?.src, reloadFiles, setParams, table]
   );
 
-  const handleSelect = (e: React.MouseEvent<HTMLTableRowElement>, f: FileManager) => {
+  const handleSelect = (e: React.MouseEvent<HTMLTableRowElement>, f: ServerFileManager) => {
     // そのまま選択
     if (table.selected.length === 0) {
       table.onSelectRow(f);
@@ -121,7 +124,7 @@ export function ServerFileView() {
       if (table.selected.length === 1) {
         const start = Math.min(filteredFiles.indexOf(table.selected[0]), targetIndex);
         const end = Math.max(filteredFiles.indexOf(table.selected[0]), targetIndex);
-        table.setSelected(filteredFiles.slice(start, end + 1));
+        table.setSelected(new ServerFileList(...filteredFiles.slice(start, end + 1)));
         return;
       }
 
@@ -135,21 +138,20 @@ export function ServerFileView() {
 
       const start = Math.min(farthestIndex, targetIndex);
       const end = Math.max(farthestIndex, targetIndex);
-      table.setSelected(filteredFiles.slice(start, end + 1));
+      table.setSelected(new ServerFileList(...filteredFiles.slice(start, end + 1)));
 
       return;
     }
 
     if (e.ctrlKey) {
       if (table.selected.includes(f)) {
-        table.setSelected(table.selected.filter((value) => value !== f));
+        table.setSelected(new ServerFileList(...table.selected.filter((value) => value !== f)));
         return;
       }
-      table.setSelected([...table.selected, f]);
-      return;
+      table.setSelected(new ServerFileList(...table.selected, f));
     }
 
-    table.setSelected([f]);
+    table.setSelected(new ServerFileList(f));
   };
 
   // メニュー系
@@ -200,7 +202,7 @@ export function ServerFileView() {
           const res = copyFiles.length
             ? await file.copy(directory?.src!)
             : await file.move(directory?.src!);
-          if (typeof res === 'number') {
+          if (res) {
             const fileTaskEndEvent = (e: FileTaskEvent) => {
               if (e.src === file.src) {
                 if (e.result !== 'success') error += 1;
@@ -259,7 +261,7 @@ export function ServerFileView() {
     const file = table.selected[0] as ServerFile;
     try {
       const res = await file.extract(file.fileName);
-      if (typeof res === 'number') {
+      if (res.result === FileTaskResult.PENDING) {
         const fileTaskEndEvent = (e: FileTaskEvent) => {
           if (e.src === file.src) {
             if (e.result !== 'success') {
@@ -272,7 +274,7 @@ export function ServerFileView() {
         ws.addEventListener('FileTaskEnd', fileTaskEndEvent);
         return;
       }
-      if (!res) {
+      if (res.result === FileTaskResult.FAILED) {
         toast.error(`圧縮ファイル作成に失敗しました`);
       }
       reloadFiles();
@@ -285,11 +287,11 @@ export function ServerFileView() {
   // イベント系
   const onContextMenu = (
     event: React.MouseEvent<HTMLTableRowElement | HTMLTableSectionElement>,
-    file?: FileManager
+    file?: ServerFileManager
   ) => {
     event.preventDefault();
 
-    if (file && !table.selected.includes(file)) table.setSelected([file]);
+    if (file && !table.selected.includes(file)) table.setSelected(new ServerFileList(file));
 
     const [clientX, clientY] = [event.clientX, event.clientY];
     setPosition({ top: clientY, left: clientX });
@@ -533,8 +535,8 @@ function nameComparator(a: ServerFile | ServerDirectory, b: ServerFile | ServerD
 }
 
 function sizeComparator(a: ServerFile | ServerDirectory, b: ServerFile | ServerDirectory) {
-  if (b.size < a.size) return -1;
-  if (b.size > a.size) return 1;
+  if (b.size! < a.size!) return -1;
+  if (b.size! > a.size!) return 1;
   return 0;
 }
 
@@ -552,7 +554,7 @@ function timeComparator(a: ServerFile | ServerDirectory, b: ServerFile | ServerD
 }
 
 type ApplyFilterProps = {
-  inputData: FileManager[];
+  inputData: ServerFileList;
   filterName: string;
   comparator: (a: any, b: any) => number;
 };
@@ -566,12 +568,12 @@ function applyFilter({ inputData, comparator, filterName }: ApplyFilterProps) {
     return a[1] - b[1];
   });
 
-  inputData = stabilizedThis.map((el) => el[0]);
+  inputData = stabilizedThis.map((el) => el[0]) as ServerFileList;
 
   if (filterName) {
     inputData = inputData.filter(
       (user) => user.name.toLowerCase().indexOf(filterName.toLowerCase()) !== -1
-    );
+    ) as ServerFileList;
   }
 
   return inputData;
@@ -580,10 +582,8 @@ function applyFilter({ inputData, comparator, filterName }: ApplyFilterProps) {
 // ----------------------------------------------------------------------
 
 export function useTable() {
-  const [page, setPage] = useState(0);
   const [orderBy, setOrderBy] = useState('name');
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [selected, setSelected] = useState<FileManager[]>([]);
+  const [selected, setSelected] = useState<ServerFileList>(new ServerFileList());
   const [order, setOrder] = useState<'asc' | 'desc'>('asc');
 
   const onSort = useCallback(
@@ -595,57 +595,27 @@ export function useTable() {
     [order, orderBy]
   );
 
-  const onSelectAllRows = useCallback((checked: boolean, newSelecteds: FileManager[]) => {
-    if (checked) {
-      setSelected(newSelecteds);
-      return;
-    }
-    setSelected([]);
-  }, []);
-
   const onSelectRow = useCallback(
-    (inputValue: FileManager) => {
+    (inputValue: ServerFileManager) => {
       const newSelected = selected.includes(inputValue)
         ? selected.filter((value) => value !== inputValue)
         : [...selected, inputValue];
 
-      setSelected(newSelected);
+      setSelected(newSelected as ServerFileList);
     },
     [selected]
   );
 
-  const onResetPage = useCallback(() => {
-    setPage(0);
-  }, []);
-
-  const onChangePage = useCallback((event: unknown, newPage: number) => {
-    setPage(newPage);
-  }, []);
-
-  const onChangeRowsPerPage = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      setRowsPerPage(parseInt(event.target.value, 10));
-      onResetPage();
-    },
-    [onResetPage]
-  );
-
   const resetSelected = useCallback(() => {
-    setSelected([]);
+    setSelected(new ServerFileList());
   }, []);
 
   return {
-    page,
     order,
     onSort,
     orderBy,
     selected,
-    rowsPerPage,
     onSelectRow,
-    onResetPage,
-    onChangePage,
-    onSelectAllRows,
-    onChangeRowsPerPage,
     resetSelected,
     setSelected,
   };

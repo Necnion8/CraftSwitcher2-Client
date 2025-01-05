@@ -1,4 +1,5 @@
-import type { LaunchOption } from 'src/abc/server-config';
+import type { BackupTask, BackupPreviewResult } from 'src/models/backup';
+import type { ServerResult, CreateServerParams } from 'src/models/server';
 
 import axios from 'axios';
 
@@ -6,10 +7,12 @@ import ServerType from 'src/abc/server-type';
 import { APIError } from 'src/abc/api-error';
 import ServerState from 'src/abc/server-state';
 import { ServerConfig } from 'src/abc/server-config';
+import { FileOperationResult } from 'src/models/file';
 
-import { FileManager } from './file-manager';
+import Backup from './backup';
+import { ServerFileManager } from './server-file-manager';
 
-import type { ServerDirectory } from './file-manager';
+import type { ServerDirectory } from './server-file-manager';
 
 // ----------------------------------------------------------------------
 
@@ -39,7 +42,7 @@ export default class Server {
   static async get(id: string): Promise<Server> {
     try {
       const result = await axios.get(`/server/${id}`);
-      return this.serializeFromResult(result.data);
+      return this.serializeFromResult(result.data as ServerResult);
     } catch (e) {
       throw APIError.fromError(e);
     }
@@ -52,8 +55,8 @@ export default class Server {
       ServerType.get(value.type),
       ServerState.get(value.state),
       value.directory,
-      value.is_loaded,
-      value.build_status
+      value.isLoaded,
+      value.buildStatus
     );
   }
 
@@ -70,7 +73,7 @@ export default class Server {
     launchCommand = '',
     stopCommand = null,
     shutdownTimeout = null,
-  }: ServerCreateParams): Promise<Server | false> {
+  }: CreateServerParams): Promise<Server | false> {
     const id = window.crypto.randomUUID();
 
     try {
@@ -80,15 +83,15 @@ export default class Server {
           name,
           directory,
           type: type.name,
-          launch_option: launchOption.toCreateSchema(),
-          enable_launch_command: enableLaunchCommand,
-          launch_command: launchCommand,
-          stop_command: stopCommand,
-          shutdown_timeout: shutdownTimeout,
+          launchOption: launchOption.toCreateSchema(),
+          enableLaunchCommand,
+          launchCommand,
+          stopCommand,
+          shutdownTimeout,
         },
         {
           headers: {
-            'Content-Type': 'application/json',
+            'content-type': 'application/json',
           },
         }
       );
@@ -199,9 +202,7 @@ export default class Server {
       const params = new URLSearchParams({
         include_buffer: includeBuffer ? 'true' : 'false',
       });
-      if (maxLines) {
-        params.set('max_lines', String(maxLines));
-      }
+      if (maxLines) params.set('max_lines', String(maxLines));
 
       const result = await axios.get(`/server/${this.id}/logs/latest?${params.toString()}`);
       return result.data;
@@ -220,7 +221,7 @@ export default class Server {
         { directory },
         {
           headers: {
-            'Content-Type': 'application/json',
+            'content-type': 'application/json',
           },
         }
       );
@@ -251,7 +252,7 @@ export default class Server {
   async getConfig(): Promise<ServerConfig> {
     try {
       const result = await axios.get(`/server/${this.id}/config`);
-      return ServerConfig.serializeFromResult(result);
+      return ServerConfig.deserializeFromResult(result);
     } catch (e) {
       throw APIError.fromError(e);
     }
@@ -261,14 +262,14 @@ export default class Server {
    * サーバーの設定を更新します
    * @param config
    */
-  async updateConfig(config: Partial<ServerConfig>): Promise<boolean> {
+  async updateConfig(config: Partial<ServerConfig>): Promise<ServerConfig> {
     try {
-      const result = await axios.put(`/server/${this.id}/config`, ServerConfig.toJSON(config), {
+      const result = await axios.put(`/server/${this.id}/config`, ServerConfig.serialize(config), {
         headers: {
-          'Content-Type': 'application/json',
+          'content-type': 'application/json',
         },
       });
-      return result.status === 200;
+      return ServerConfig.deserializeFromResult(result);
     } catch (e) {
       throw APIError.fromError(e);
     }
@@ -277,10 +278,10 @@ export default class Server {
   /**
    * 設定ファイルを再読み込みします
    */
-  async reloadConfig(): Promise<boolean> {
+  async reloadConfig(): Promise<ServerConfig> {
     try {
       const result = await axios.post(`/server/${this.id}/config/reload`);
-      return result.status === 200;
+      return ServerConfig.deserializeFromResult(result);
     } catch (e) {
       throw APIError.fromError(e);
     }
@@ -290,7 +291,11 @@ export default class Server {
    * サーバーJarのインストールをします
    * ビルドが必要な場合は、サーバーの初回起動時に実行されます。
    */
-  async install(serverType: ServerType, version: string, build: string): Promise<string> {
+  async install(
+    serverType: ServerType,
+    version: string,
+    build: string
+  ): Promise<FileOperationResult> {
     try {
       const params = new URLSearchParams({
         server_type: serverType.name,
@@ -298,7 +303,7 @@ export default class Server {
         build,
       });
       const result = await axios.post(`/server/${this.id}/install?${params.toString()}`);
-      return result.data.result;
+      return new FileOperationResult(result.data);
     } catch (e) {
       throw APIError.fromError(e);
     }
@@ -317,13 +322,13 @@ export default class Server {
   }
 
   async getDirectory(path: string): Promise<ServerDirectory> {
-    return FileManager.get(this.id, path);
+    return ServerFileManager.get(this.id, path);
   }
 
-  async getEula(): Promise<string> {
+  async getEula(): Promise<boolean> {
     try {
       const result = await axios.get(`/server/${this.id}/eula`);
-      return result.data.eula;
+      return result.data.eula === 'true';
     } catch (e) {
       throw APIError.fromError(e);
     }
@@ -337,25 +342,25 @@ export default class Server {
       throw APIError.fromError(e);
     }
   }
+
+  async getBackups(): Promise<Backup[]> {
+    return Backup.getByServer(this);
+  }
+
+  async getBackupTask(): Promise<BackupTask> {
+    return Backup.getTask(this);
+  }
+
+  async createBackup(comments: string | null, snapshot: boolean = false): Promise<BackupTask> {
+    return Backup.create(this, comments, snapshot);
+  }
+
+  async previewBackup(params: {
+    checkFiles?: boolean;
+    includeFiles?: boolean;
+    includeErrors?: boolean;
+    onlyUpdates?: boolean;
+  }): Promise<BackupPreviewResult> {
+    return Backup.preview(this, params);
+  }
 }
-
-type ServerResult = {
-  id: string;
-  name: string;
-  type: string;
-  state: string;
-  directory: string;
-  is_loaded: boolean;
-  build_status: string;
-};
-
-type ServerCreateParams = {
-  name: string | null;
-  directory: string;
-  type: ServerType;
-  launchOption: LaunchOption;
-  enableLaunchCommand?: boolean;
-  launchCommand?: string | null;
-  stopCommand?: string | null;
-  shutdownTimeout?: number | null;
-};

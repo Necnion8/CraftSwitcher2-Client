@@ -1,3 +1,5 @@
+import type { ServerFile } from 'src/api/server-file-manager';
+
 import { toast } from 'sonner';
 import { Editor } from '@monaco-editor/react';
 import { useState, useEffect, useCallback } from 'react';
@@ -13,7 +15,7 @@ import Breadcrumbs from '@mui/material/Breadcrumbs';
 
 import { APIError } from 'src/abc/api-error';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { ServerFile, FileManager } from 'src/api/file-manager';
+import { ServerFileManager } from 'src/api/server-file-manager';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -70,8 +72,8 @@ export function ServerFileEditView() {
       const path = params.get('path')!;
 
       try {
-        const fileInfo = await FileManager.getInfo(id, path);
-        if (!(fileInfo instanceof ServerFile)) return;
+        const fileInfo = await ServerFileManager.getInfo(id, path);
+        if (!fileInfo.isFile()) return;
 
         const _file = fileInfo as ServerFile;
         setFile(_file);
@@ -92,6 +94,7 @@ export function ServerFileEditView() {
 
         setContent(await data.text());
       } catch (e) {
+        console.log(e);
         toast.error(`ファイルの読み込みに失敗しました: ${APIError.createToastMessage(e)}`);
       }
     })();

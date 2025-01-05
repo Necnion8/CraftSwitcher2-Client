@@ -73,7 +73,7 @@ export function ServerManagementView() {
   }, []);
 
   const page =
-    ['console', 'file', 'config'].find(
+    ['console', 'file', 'config', 'backup'].find(
       (p) => location.pathname.endsWith(p) || location.pathname.endsWith(`${p}/`)
     ) || 'summary';
 
@@ -134,6 +134,7 @@ export function ServerManagementView() {
           <Tab value="summary" label="概要" component={RouterLink} href="" />
           <Tab value="console" label="コンソール" component={RouterLink} href="console" />
           <Tab value="file" label="ファイル" component={RouterLink} href="file" />
+          <Tab value="backup" label="バックアップ" component={RouterLink} href="backup" />
           <Tab value="config" label="設定" component={RouterLink} href="config" />
         </Tabs>
         <Box flexGrow={1} sx={{ height: '100%' }}>

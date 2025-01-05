@@ -1,6 +1,9 @@
+import type { JarDLVersionInfoResult, JarDLBuildInfoAPIResult } from 'src/models/jardl';
+
 import axios from 'axios';
 
 import { APIError } from 'src/abc/api-error';
+import { JarDLBuildInfoResult } from 'src/models/jardl';
 
 // ------------------------------------------------------------
 
@@ -14,9 +17,7 @@ export default class ServerInstaller {
     }
   }
 
-  static async getVersions(
-    type: string
-  ): Promise<{ version: string; build_count: number | null }[]> {
+  static async getVersions(type: string): Promise<JarDLVersionInfoResult[]> {
     try {
       const result = await axios.get(`/jardl/${type}/versions`);
       return result.data;
@@ -25,23 +26,10 @@ export default class ServerInstaller {
     }
   }
 
-  static async getBuilds(
-    type: string,
-    version: string
-  ): Promise<
-    {
-      build: string;
-      download_url: string;
-      java_major_version: number | null;
-      updated_datetime: string;
-      recommended: false;
-      is_required_build: true;
-      is_loaded_info: true;
-    }[]
-  > {
+  static async getBuilds(type: string, version: string): Promise<JarDLBuildInfoResult[]> {
     try {
       const result = await axios.get(`/jardl/${type}/version/${version}/builds`);
-      return result.data;
+      return result.data.map((b: JarDLBuildInfoAPIResult) => new JarDLBuildInfoResult(b));
     } catch (e) {
       throw APIError.fromError(e);
     }
@@ -51,18 +39,10 @@ export default class ServerInstaller {
     type: string,
     version: string,
     build: string
-  ): Promise<{
-    build: string;
-    download_url: string;
-    java_major_version: number | null;
-    updated_datetime: string;
-    recommended: false;
-    is_required_build: true;
-    is_loaded_info: true;
-  }> {
+  ): Promise<JarDLBuildInfoResult> {
     try {
       const result = await axios.get(`/jardl/${type}/version/${version}/build/${build}`);
-      return result.data;
+      return result.data.map((b: JarDLBuildInfoAPIResult) => new JarDLBuildInfoResult(b));
     } catch (e) {
       throw APIError.fromError(e);
     }

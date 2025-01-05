@@ -7,8 +7,8 @@ import Typography from '@mui/material/Typography';
 
 import Server from 'src/api/server';
 import { WebSocketContext } from 'src/websocket';
-import { FileManager } from 'src/api/file-manager';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { ServerFileManager } from 'src/api/server-file-manager';
 
 import { AnalyticsServerList } from '../analytics-server-list';
 import { AnalyticsCurrentVisits } from '../analytics-current-visits';
@@ -31,7 +31,7 @@ export function OverviewAnalyticsView() {
 
   useEffect(() => {
     (async () => {
-      const info = await FileManager.getStorageInfo();
+      const info = await ServerFileManager.getStorageInfo();
       setStorageInfo(info);
 
       const s = await Server.all();

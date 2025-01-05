@@ -118,6 +118,15 @@ export class APIErrorCode {
 
   public static readonly BACKUP_NOT_FOUND = new APIErrorCode(801, 'バックアップが見つかりません。');
 
+  public static readonly INVALID_BACKUP = new APIErrorCode(802, '無効なバックアップです');
+
+  public static readonly UNAVAILABLE_SNAPSHOT = new APIErrorCode(
+    803,
+    'スナップショットが利用できません'
+  );
+
+  public static readonly DISABLED_SNAPSHOT = new APIErrorCode(804, 'スナップショットが無効です');
+
   // java
   public static readonly UNKNOWN_JAVA_PRESET = new APIErrorCode(900, '不明なJavaプリセットです。');
 
@@ -153,6 +162,9 @@ export class APIErrorCode {
     APIErrorCode.NOT_EXISTS_SERVER_BUILD,
     APIErrorCode.BACKUP_ALREADY_RUNNING,
     APIErrorCode.BACKUP_NOT_FOUND,
+    APIErrorCode.INVALID_BACKUP,
+    APIErrorCode.UNAVAILABLE_SNAPSHOT,
+    APIErrorCode.DISABLED_SNAPSHOT,
     APIErrorCode.UNKNOWN_JAVA_PRESET,
   ];
 

@@ -1,3 +1,5 @@
+import type { UserResult, UserOperationResult } from 'src/models/user';
+
 import axios from 'axios';
 
 import { APIError } from 'src/abc/api-error';
@@ -35,32 +37,33 @@ export default class User {
     try {
       const result = await axios.get('/users');
       return result.data.map(
-        (c: {
-          id: number;
-          name: string;
-          last_login: Date | null;
-          last_address: string | null;
-          permission: number;
-        }) => new User(c.id, c.name, c.last_login, c.last_address, c.permission)
+        (u: UserResult) =>
+          new User(
+            u.id,
+            u.name,
+            u.lastLogin ? new Date(u.lastLogin) : null,
+            u.lastAddress,
+            u.permission
+          )
       );
     } catch (e) {
       throw APIError.fromError(e);
     }
   }
 
-  static async add(username: string, password: string): Promise<boolean> {
+  static async add(username: string, password: string): Promise<UserOperationResult> {
     try {
       const result = await axios.post('/user/add', { username, password });
-      return result.data.result;
+      return result.data as UserOperationResult;
     } catch (e) {
       throw APIError.fromError(e);
     }
   }
 
-  async remove(): Promise<boolean> {
+  async remove(): Promise<UserOperationResult> {
     try {
       const result = await axios.delete(`/user/remove?user_id=${this.id}`);
-      return result.data.result;
+      return result.data as UserOperationResult;
     } catch (e) {
       throw APIError.fromError(e);
     }
